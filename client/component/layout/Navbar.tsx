@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Navbar() {
   return (
-    <header className="w-full border-b bg-white">
+    <header className="w-full border-b bg-white px-8 sm:px-10 lg:px-12">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         
         {/* Left: Logo & Navigation*/}

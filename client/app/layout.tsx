@@ -1,12 +1,6 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/component/layout/Navbar";
-
-export const metadata: Metadata = {
-  title: "AgriLink",
-  description: "Digital agricultural marketplace",
-};
+import Footer from "@/component/layout/Footer";
 
 export default function RootLayout({
   children,
@@ -15,9 +9,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="flex min-h-screen flex-col">
         <Navbar />
-        {children}
+        <main className="flex-grow">{children}</main>
+        <Footer />
       </body>
     </html>
   );
