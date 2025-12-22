@@ -1,57 +1,15 @@
 "use client";
 
-import ListingCard from './ListingCard';
+import ListingCard from "./ListingCard";
 
-type Listing = {
-  id: number;
-  title: string;
-  price: number;
-  quantity: number;
-  location: string;
-  farmer: string;
-  status: 'online' | 'offline';
-  syncStatus: 'synced' | 'pending' | 'online-only';
-  image?: string;
-};
-
-type ListingsGridProps = {
-  listings: Listing[];
-  totalCount?: number;
-};
-
-export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGridProps) {
+export default function ListingsGrid({ listings, totalCount }: any) {
   return (
-    <div className="lg:w-3/4">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">Available Listings ({totalCount})</h2>
-        <div className="text-sm text-gray-500">
-          Showing {listings.length} of {totalCount} listings
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {listings.map((listing) => (
-          <ListingCard
-            key={listing.id}
-            title={listing.title}
-            price={listing.price}
-            quantity={listing.quantity}
-            location={listing.location}
-            farmer={listing.farmer}
-            status={listing.status}
-            syncStatus={listing.syncStatus}
-            image={listing.image}
-          />
+    <div className="flex-1">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {listings.map((l: any) => (
+          <ListingCard key={l.id} {...l} />
         ))}
       </div>
-
-      {listings.length === 0 && (
-        <div className="py-12 text-center">
-          <div className="text-4xl mb-4">🌾</div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No listings found</h3>
-          <p className="text-gray-500">Try adjusting your filters or check back later</p>
-        </div>
-      )}
     </div>
   );
 }

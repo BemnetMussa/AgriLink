@@ -1,113 +1,54 @@
 "use client";
 
-import { Phone, CheckCircle, Clock, Wifi, WifiOff } from 'lucide-react';
+import { MapPin, User, CheckCircle, WifiOff } from 'lucide-react';
 
-type ListingCardProps = {
-  title: string;
-  price: number;
-  quantity: number;
-  location: string;
-  farmer: string;
-  status: 'online' | 'offline';
-  syncStatus: 'synced' | 'pending' | 'online-only';
-  image?: string;
-};
-
-export default function ListingCard({
-  title,
-  price,
-  quantity,
-  location,
-  farmer,
-  status,
-  syncStatus,
-  image
-}: ListingCardProps) {
-  // Get emoji based on crop type
-  const getEmoji = (title: string) => {
-    if (title.toLowerCase().includes('tomato')) return '🍅';
-    if (title.toLowerCase().includes('coffee')) return '☕';
-    if (title.toLowerCase().includes('potato')) return '🥔';
-    if (title.toLowerCase().includes('teff')) return '🌾';
-    if (title.toLowerCase().includes('cabbage')) return '🥬';
-    if (title.toLowerCase().includes('onion')) return '🧅';
-    if (title.toLowerCase().includes('banana')) return '🍌';
-    if (title.toLowerCase().includes('wheat')) return '🌾';
-    if (title.toLowerCase().includes('carrot')) return '🥕';
-    if (title.toLowerCase().includes('barley')) return '🌾';
-    return '🌱';
-  };
-
-  // Get sync status display
-  const getSyncStatus = () => {
-    switch (syncStatus) {
-      case 'synced':
-        return {
-          icon: <CheckCircle className="h-4 w-4" />,
-          text: 'Offline Synced',
-          color: 'text-blue-600'
-        };
-      case 'pending':
-        return {
-          icon: <Clock className="h-4 w-4" />,
-          text: 'Sync Pending',
-          color: 'text-yellow-600'
-        };
-      case 'online-only':
-        return {
-          icon: <Wifi className="h-4 w-4" />,
-          text: 'Online Only',
-          color: 'text-gray-600'
-        };
-      default:
-        return {
-          icon: <CheckCircle className="h-4 w-4" />,
-          text: 'Synced',
-          color: 'text-gray-600'
-        };
-    }
-  };
-
-  const syncInfo = getSyncStatus();
-  const emoji = image || getEmoji(title);
-
+export default function ListingCard(props: any) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
-      {/* Header with emoji and status */}
-      <div className="mb-4 flex items-start justify-between">
-        <div className="text-4xl">{emoji}</div>
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${status === 'online' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-          {status === 'online' ? 'Online' : 'Offline'}
+    <div className="flex flex-col text-gray-900 rounded-xl bg-white p-4 shadow-sm hover:shadow-md border border-gray-100">
+      <div className="relative">
+        <img
+          src={props.image}
+          alt={props.title}
+          className="h-40 w-full rounded-lg object-cover"
+        />
+        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md px-2 py-1 flex items-center gap-1 text-xs font-medium">
+          <WifiOff size={12} />
+          Offline Synced
         </div>
       </div>
 
-      {/* Title */}
-      <h3 className="mb-2 text-lg font-semibold text-gray-800 line-clamp-2">
-        {title}
-      </h3>
+      <h3 className="mt-4 font-semibold text-lg">{props.title}</h3>
 
-      {/* Details */}
-      <div className="mb-4 space-y-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xl font-bold text-green-600">ETB {price}/Kg</span>
-          <span className="text-gray-500">•</span>
-          <span className="text-gray-600">{quantity} Kg available</span>
-        </div>
-        <div className="text-gray-600">{location}</div>
-        <div className="text-sm text-gray-500">Farmer: {farmer}</div>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="font-bold text-green-600 text-lg">
+          {props.price} ETB/Kg
+        </span>
+        <span className="text-gray-600 text-sm font-medium">
+          {props.quantity} Kg available
+        </span>
       </div>
 
-      {/* Sync Status */}
-      <div className="mb-4 flex items-center gap-2">
-        <div className={`flex items-center gap-1 text-sm ${syncInfo.color}`}>
-          {syncInfo.icon}
-          <span>{syncInfo.text}</span>
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <MapPin size={16} className="text-gray-400" />
+          <p className="text-sm text-gray-600">{props.location}</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <User size={16} className="text-gray-400" />
+          <p className="text-sm text-gray-600">Farmer: {props.farmer}</p>
         </div>
       </div>
 
-      {/* Quick Contact Button */}
-      <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-50 py-2.5 font-medium text-green-700 hover:bg-green-100 transition-colors">
-        <Phone className="h-4 w-4" />
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-full">
+          <CheckCircle size={14} className="text-green-600" />
+          <span className="text-xs text-green-700 font-medium">Escrow Verified</span>
+        </div>
+
+      </div>
+
+      <button className="mt-4 w-full rounded-lg border border-green-600 py-3 text-sm font-medium text-green-600 hover:bg-green-50 transition-colors">
         Quick Contact
       </button>
     </div>
