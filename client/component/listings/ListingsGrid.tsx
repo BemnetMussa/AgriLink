@@ -11,7 +11,9 @@ type Listing = {
   farmer: string;
   status: 'online' | 'offline';
   syncStatus: 'synced' | 'pending' | 'online-only';
-  image?: string;
+  image: string;
+  rating: number;
+  soldQuantity: number;
 };
 
 type ListingsGridProps = {
@@ -41,6 +43,8 @@ export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGrid
             status={listing.status}
             syncStatus={listing.syncStatus}
             image={listing.image}
+            rating={listing.rating}
+            soldQuantity={listing.soldQuantity}
           />
         ))}
       </div>
