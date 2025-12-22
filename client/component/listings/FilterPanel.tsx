@@ -9,17 +9,29 @@ type FilterPanelProps = {
   onPriceChange: (range: [number, number]) => void;
   quantityRange: [number, number];
   onQuantityChange: (range: [number, number]) => void;
+  selectedLanguage: string;
+  onLanguageChange: (lang: string) => void;
+  sortBy: string;
+  onSortChange: (sort: string) => void;
+  mapViewEnabled: boolean;
+  onMapViewToggle: () => void;
   onClearFilters: () => void;
 };
 
-export default function FilterPanel({ 
-  selectedCrops, 
-  onCropToggle, 
-  priceRange, 
-  onPriceChange, 
-  quantityRange, 
+export default function FilterPanel({
+  selectedCrops,
+  onCropToggle,
+  priceRange,
+  onPriceChange,
+  quantityRange,
   onQuantityChange,
-  onClearFilters 
+  selectedLanguage,
+  onLanguageChange,
+  sortBy,
+  onSortChange,
+  mapViewEnabled,
+  onMapViewToggle,
+  onClearFilters
 }: FilterPanelProps) {
   const crops = [
     'Tomatoes', 'Coffee Beans', 'Potatoes', 'Teff Grain', 'Cabbage',
@@ -98,7 +110,79 @@ export default function FilterPanel({
         />
       </div>
 
-      <button 
+      {/* Language */}
+      <div className="mb-8">
+        <h3 className="mb-3 font-medium text-gray-700">Language</h3>
+        <select
+          value={selectedLanguage}
+          onChange={(e) => onLanguageChange(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+        >
+          <option value="English">English</option>
+          <option value="Amharic">Amharic</option>
+          <option value="Afaan Oromoo">Afaan Oromoo</option>
+        </select>
+      </div>
+
+      {/* Sort By */}
+      <div className="mb-8">
+        <h3 className="mb-3 font-medium text-gray-700">Sort By</h3>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sortBy"
+              value="newest"
+              checked={sortBy === 'newest'}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Newest</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sortBy"
+              value="price-low"
+              checked={sortBy === 'price-low'}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Price (Low to High)</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sortBy"
+              value="price-high"
+              checked={sortBy === 'price-high'}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Price (High to Low)</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Map-Dark View Toggle */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-gray-700">Map-Dark View</h3>
+          <button
+            type="button"
+            onClick={onMapViewToggle}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mapViewEnabled ? 'bg-green-600' : 'bg-gray-300'
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mapViewEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      <button
         onClick={onClearFilters}
         className="w-full rounded-lg bg-gray-100 py-2.5 font-medium text-gray-700 hover:bg-gray-200 transition-colors"
       >
