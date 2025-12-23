@@ -87,8 +87,8 @@ export default function FilterPanel({
       {/* Quantity */}
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-medium text-gray-700">Quantity (kg)</h3>
-          <span className="text-sm text-gray-500">{quantityRange[0]} - {quantityRange[1]} kg</span>
+          <h3 className="font-medium text-gray-700">Min Quantity (kg)</h3>
+          <span className="text-sm text-gray-500">At least {quantityRange[1]} kg</span>
         </div>
         <input
           type="range"
@@ -104,8 +104,8 @@ export default function FilterPanel({
       {/* Price */}
       <div className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-medium text-gray-700">Price (ETB)</h3>
-          <span className="text-sm text-gray-500">ETB {priceRange[0]} - {priceRange[1]}</span>
+          <h3 className="font-medium text-gray-700">Max Price (ETB)</h3>
+          <span className="text-sm text-gray-500">Up to ETB {priceRange[1]}</span>
         </div>
         <input
           type="range"
