@@ -11,6 +11,8 @@ type FilterPanelProps = {
   onQuantityChange: (range: [number, number]) => void;
   selectedLanguage: string;
   onLanguageChange: (lang: string) => void;
+  selectedLocation: string;
+  onLocationChange: (loc: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
   mapViewEnabled: boolean;
@@ -27,6 +29,8 @@ export default function FilterPanel({
   onQuantityChange,
   selectedLanguage,
   onLanguageChange,
+  selectedLocation,
+  onLocationChange,
   sortBy,
   onSortChange,
   mapViewEnabled,
@@ -66,13 +70,17 @@ export default function FilterPanel({
       {/* Location */}
       <div className="mb-8">
         <h3 className="mb-3 font-medium text-gray-700">Location</h3>
-        <select className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-          <option>Select Region</option>
-          <option>Addis Ababa</option>
-          <option>Oromia Region</option>
-          <option>Amhara Region</option>
-          <option>Sidama</option>
-          <option>Tigray Region</option>
+        <select
+          value={selectedLocation}
+          onChange={(e) => onLocationChange(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+        >
+          <option value="">All Regions</option>
+          <option value="Addis Ababa">Addis Ababa</option>
+          <option value="Oromia Region">Oromia Region</option>
+          <option value="Amhara Region">Amhara Region</option>
+          <option value="Sidama">Sidama</option>
+          <option value="Tigray Region">Tigray Region</option>
         </select>
       </div>
 
@@ -116,7 +124,7 @@ export default function FilterPanel({
         <select
           value={selectedLanguage}
           onChange={(e) => onLanguageChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
         >
           <option value="English">English</option>
           <option value="Amharic">Amharic</option>
