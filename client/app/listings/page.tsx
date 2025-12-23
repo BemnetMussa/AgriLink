@@ -8,8 +8,8 @@ import SearchBar from "@/component/listings/SearchBar";
 export default function ListingsPage() {
   // ✅ REQUIRED STATES
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
-  const [quantityRange, setQuantityRange] = useState<[number, number]>([0, 2000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [quantityRange, setQuantityRange] = useState<[number, number]>([0, 0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -176,11 +176,11 @@ export default function ListingsPage() {
       // Location filter
       const matchesLocation = !selectedLocation || item.location === selectedLocation;
 
-      // Price filter (only filter by max if range[0] is 0)
-      const matchesPrice = item.price >= priceRange[0] && item.price <= priceRange[1];
+      // Price filter (Max Price Requirement)
+      const matchesPrice = item.price <= priceRange[1];
 
-      // Quantity filter
-      const matchesQuantity = item.quantity >= quantityRange[0] && item.quantity <= quantityRange[1];
+      // Quantity filter (Min Quantity Requirement - Buyer needs at least this much)
+      const matchesQuantity = item.quantity >= quantityRange[1];
 
       return matchesSearch && matchesCrop && matchesLocation && matchesPrice && matchesQuantity;
     });
@@ -225,8 +225,8 @@ export default function ListingsPage() {
   // Clear all filters
   const handleClearFilters = () => {
     setSelectedCrops([]);
-    setPriceRange([0, 500]);
-    setQuantityRange([0, 2000]);
+    setPriceRange([0, 1000]);
+    setQuantityRange([0, 0]);
     setSearchQuery("");
     setSelectedLanguage("English");
     setSortBy("newest");
