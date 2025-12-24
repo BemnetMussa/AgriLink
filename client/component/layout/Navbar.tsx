@@ -7,7 +7,7 @@ import { User } from "lucide-react";
 export default function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const isListings = pathname === "/listings";
+  const isListings = pathname.startsWith("/listings");
 
   return (
     <header className="w-full border-b bg-white px-4 sm:px-6 lg:px-8">
