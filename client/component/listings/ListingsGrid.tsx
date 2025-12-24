@@ -35,6 +35,7 @@ export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGrid
         {listings.map((listing) => (
           <ListingCard
             key={listing.id}
+            id={listing.id}
             title={listing.title}
             price={listing.price}
             quantity={listing.quantity}
