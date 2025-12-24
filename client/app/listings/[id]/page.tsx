@@ -161,20 +161,20 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
                                 {/* Step 1 */}
                                 <div className="relative flex items-center gap-4">
-                                    <div className="z-10 flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 ring-4 ring-white">
-                                        <Check className="h-5 w-5" />
+                                    <div className="z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 ring-4 ring-white">
+                                        <Package className="h-5 w-5" />
                                     </div>
-                                    <div className="absolute left-4 top-8 h-full w-0.5 bg-green-100"></div>
-                                    <span className="font-medium text-gray-900">Order Placed</span>
+                                    <div className="absolute left-4 top-8 h-full w-0.5 bg-gray-100"></div>
+                                    <span className="font-medium text-gray-400">Order Placed</span>
                                 </div>
 
                                 {/* Step 2 */}
                                 <div className="relative flex items-center gap-4">
-                                    <div className="z-10 flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 ring-4 ring-white">
-                                        <Check className="h-5 w-5" />
+                                    <div className="z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 ring-4 ring-white">
+                                        <CreditCard className="h-5 w-5" />
                                     </div>
                                     <div className="absolute left-4 top-8 h-full w-0.5 bg-gray-100"></div>
-                                    <span className="font-medium text-gray-900">Payment Confirmed</span>
+                                    <span className="font-medium text-gray-400">Payment Confirmed</span>
                                 </div>
 
                                 {/* Step 3 */}
