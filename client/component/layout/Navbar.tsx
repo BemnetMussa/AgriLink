@@ -34,7 +34,7 @@ export default function Navbar() {
         {/* Right: Actions */}
         <div className="flex items-center gap-5 text-sm ml-auto">
           <Link
-            href="/"
+            href="/listings/create"
             className={`rounded-md px-4 py-2 font-medium transition ${isHome
               ? "bg-green-600 text-white hover:bg-green-700"
               : "border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-sm"
