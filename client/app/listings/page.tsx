@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import FilterPanel from "@/component/listings/FilterPanel";
 import ListingsGrid from "@/component/listings/ListingsGrid";
 import SearchBar from "@/component/listings/SearchBar";
@@ -17,18 +17,31 @@ export default function ListingsPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [mapViewEnabled, setMapViewEnabled] = useState(false);
 
+  // State to hold all listings (sample + local storage)
+  const [allListings, setAllListings] = useState(sampleListings);
+
+  // Load local storage listings on component mount
+  useEffect(() => {
+    const localItems = JSON.parse(localStorage.getItem("local_listings") || "[]");
+    if (localItems.length > 0) {
+      setAllListings((prevListings) => [...prevListings, ...localItems]);
+    }
+  }, []); // Empty dependency array means this runs once on mount
+
   // Memoized filtering and scoring logic
   const filteredListings = useMemo(() => {
     // 1. First, apply hard filters
-    let result = sampleListings.filter(item => {
+    let result = allListings.filter(item => {
       // Search filter (title, farmer, location)
       const matchesSearch = !searchQuery ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.farmer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.location.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Crop category filter (Exact match against category field)
-      const matchesCrop = selectedCrops.length === 0 || selectedCrops.includes(item.category);
+      // Crop category filter (Default to "Other" if missing or match exact)
+      const matchesCrop = selectedCrops.length === 0 ||
+        selectedCrops.includes(item.category) ||
+        (selectedCrops.includes("Other") && !item.category);
 
       // Location filter
       const matchesLocation = !selectedLocation || item.location === selectedLocation;
@@ -68,7 +81,7 @@ export default function ListingsPage() {
 
       return 0;
     });
-  }, [searchQuery, selectedCrops, priceRange, quantityRange, sortBy, selectedLocation]);
+  }, [allListings, searchQuery, selectedCrops, priceRange, quantityRange, sortBy, selectedLocation]);
 
   // Toggle crop selection
   const handleCropToggle = (crop: string) => {
