@@ -28,9 +28,16 @@ export default function CreateListingPage() {
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("Addis Ababa, Ethiopia");
     const [isOffline, setIsOffline] = useState(true);
+    const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: 9.03, lng: 38.74 }); // Default Addis
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
     const [isLocating, setIsLocating] = useState(false);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
 
     // Mock photos
     const [photos, setPhotos] = useState([
@@ -40,6 +47,53 @@ export default function CreateListingPage() {
 
     const removePhoto = (id: number) => {
         setPhotos(photos.filter(p => p.id !== id));
+    };
+
+    const startCamera = async () => {
+        setIsCameraOpen(true);
+        setCapturedImage(null);
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (err) {
+            console.error("Error accessing camera", err);
+            alert("Could not access camera. Please check permissions.");
+            setIsCameraOpen(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+        }
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            setCapturedImage(dataUrl);
+            stopCamera();
+        }
+    };
+
+    const confirmPhoto = () => {
+        if (capturedImage) {
+            setPhotos([...photos, { id: Date.now(), url: capturedImage }]);
+            setIsCameraOpen(false);
+            setCapturedImage(null);
+        }
     };
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,18 +113,17 @@ export default function CreateListingPage() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    // In a real app, we'd use reverse geocoding here
-                    setLocation("Addis Ababa, Bole Sub-City (Detected)");
+                    const { latitude, longitude } = position.coords;
+                    setCoords({ lat: latitude, lng: longitude });
+                    setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
                     setIsLocating(false);
                 },
                 (error) => {
                     console.error("Error fetching location", error);
-                    setLocation("Addis Ababa, Ethiopia (Manual)");
                     setIsLocating(false);
                 }
             );
         } else {
-            setLocation("Addis Ababa, Ethiopia");
             setIsLocating(false);
         }
     };
@@ -237,7 +290,7 @@ export default function CreateListingPage() {
                             {/* Take Photo Action */}
                             <button
                                 type="button"
-                                onClick={triggerUpload}
+                                onClick={startCamera}
                                 className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white hover:bg-gray-50 hover:border-green-500 transition group"
                             >
                                 <Camera className="h-6 w-6 text-gray-400 group-hover:text-green-600" />
@@ -299,13 +352,16 @@ export default function CreateListingPage() {
                             </div>
 
                             {/* Map Preview Placeholder */}
-                            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-gray-200 flex items-center justify-center border border-gray-200">
-                                <div className="text-center">
-                                    <MapPin className="mx-auto h-8 w-8 text-gray-400" />
-                                    <p className="mt-2 text-sm font-medium text-gray-500">Map preview (OpenStreetMap)</p>
+                            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-gray-100 border border-gray-200">
+                                <iframe
+                                    className="h-full w-full"
+                                    title="Map Preview"
+                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.01}%2C${coords.lat - 0.01}%2C${coords.lng + 0.01}%2C${coords.lat + 0.01}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`}
+                                ></iframe>
+                                <div className="absolute top-3 right-3 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-600 shadow-sm border border-gray-100 flex items-center gap-1.5">
+                                    <Info className="h-3.5 w-3.5 text-blue-500" />
+                                    OpenStreetMap Active
                                 </div>
-                                {/* Subtle overlay to look more like a map */}
-                                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, gray 1px, transparent 0)', backgroundSize: '24px 24px' }} />
                             </div>
                         </div>
                     </div>
@@ -324,6 +380,74 @@ export default function CreateListingPage() {
 
                 </form>
             </div>
+
+            {/* Camera Modal */}
+            {isCameraOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm">
+                    <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-gray-900 shadow-2xl">
+
+                        {/* Header */}
+                        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-6 bg-gradient-to-b from-black/60 to-transparent">
+                            <h3 className="text-lg font-bold text-white">
+                                {capturedImage ? "Review Photo" : "Capture Produce"}
+                            </h3>
+                            <button
+                                onClick={() => { setIsCameraOpen(false); stopCamera(); }}
+                                className="rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+
+                        {/* Viewport */}
+                        <div className="relative aspect-[3/4] w-full bg-black flex items-center justify-center">
+                            {!capturedImage ? (
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    playsInline
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <img src={capturedImage} className="h-full w-full object-cover" />
+                            )}
+                            <canvas ref={canvasRef} className="hidden" />
+                        </div>
+
+                        {/* Controls */}
+                        <div className="p-8">
+                            {!capturedImage ? (
+                                <div className="flex justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={capturePhoto}
+                                        className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-white p-1 hover:scale-105 transition active:scale-95"
+                                    >
+                                        <div className="h-full w-full rounded-full bg-white shadow-lg shadow-white/20" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={startCamera}
+                                        className="flex-1 rounded-2xl border border-white/20 bg-white/10 py-4 font-bold text-white hover:bg-white/20 transition"
+                                    >
+                                        Retake
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={confirmPhoto}
+                                        className="flex-1 rounded-2xl bg-green-600 py-4 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-900/40"
+                                    >
+                                        Use Photo
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
