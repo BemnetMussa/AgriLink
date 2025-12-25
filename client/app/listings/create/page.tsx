@@ -127,6 +127,7 @@ export default function CreateListingPage() {
     const handleAutofillLocation = () => {
         setIsLocating(true);
         if ("geolocation" in navigator) {
+            // This triggers the browser permission prompt
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
@@ -136,10 +137,17 @@ export default function CreateListingPage() {
                 },
                 (error) => {
                     console.error("Error fetching location", error);
+                    let message = "Could not get location.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        message = "Location permission denied.";
+                    }
+                    alert(message);
                     setIsLocating(false);
-                }
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
         } else {
+            alert("Geolocation is not supported by your browser.");
             setIsLocating(false);
         }
     };
@@ -208,17 +216,11 @@ export default function CreateListingPage() {
 
                     {/* Section 1: Offline Submission Status */}
                     <div className="rounded-2xl border border-green-100 bg-green-50/50 p-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-green-100 p-2 text-green-700">
-                                    <CheckCircle2 className="h-5 w-5" />
-                                </div>
-                                <h3 className="text-lg font-bold text-green-800">Offline Submission Status</h3>
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-green-100 p-2 text-green-700">
+                                <CheckCircle2 className="h-5 w-5" />
                             </div>
-                            <div className="flex items-center gap-2 rounded-lg bg-green-600 px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
-                                <WifiOff className="h-3 w-3" />
-                                Offline
-                            </div>
+                            <h3 className="text-lg font-bold text-green-800">Offline Submission Status</h3>
                         </div>
                         <p className="mt-3 text-sm text-green-700 font-medium">
                             Your listing is saved locally. 3 items in submission queue, they will sync automatically when you are online.
