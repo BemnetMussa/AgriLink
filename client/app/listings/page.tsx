@@ -24,7 +24,12 @@ export default function ListingsPage() {
   useEffect(() => {
     const localItems = JSON.parse(localStorage.getItem("local_listings") || "[]");
     if (localItems.length > 0) {
-      setAllListings((prevListings) => [...prevListings, ...localItems]);
+      setAllListings((prevListings) => {
+        // Correctly merge and deduplicate by ID
+        const combined = [...prevListings, ...localItems];
+        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        return unique;
+      });
     }
   }, []); // Empty dependency array means this runs once on mount
 
