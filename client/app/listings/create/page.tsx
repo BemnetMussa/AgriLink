@@ -126,57 +126,54 @@ export default function CreateListingPage() {
 
     const handleAutofillLocation = () => {
         setIsLocating(true);
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setCoords({ lat: latitude, lng: longitude });
-                    setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                    setIsLocating(false);
-                },
-                (error) => {
-                    console.error("Geolocation Error Detail:", {
-                        code: error.code,
-                        message: error.message
-                    });
 
-                    let message = "Could not get location.";
-                    if (error.code === error.PERMISSION_DENIED) {
-                        message = "Location permission denied. Please enable it in browser settings.";
-                    } else if (error.code === error.POSITION_UNAVAILABLE) {
-                        message = "Location information is unavailable.";
-                    } else if (error.code === error.TIMEOUT) {
-                        message = "Location request timed out. Trying again without high accuracy...";
-                        // Retry with lower accuracy if it timed out
-                        navigator.geolocation.getCurrentPosition(
-                            (pos) => {
-                                const { latitude, longitude } = pos.coords;
-                                setCoords({ lat: latitude, lng: longitude });
-                                setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                                setIsLocating(false);
-                            },
-                            (err2) => {
-                                alert("Failed to detect location. Please enter it manually.");
-                                setIsLocating(false);
-                            },
-                            { timeout: 10000 }
-                        );
-                        return;
-                    }
-
-                    alert(message);
-                    setIsLocating(false);
-                },
-                {
-                    enableHighAccuracy: false, // Set to false for faster, more reliable fixes on desktop/wifi
-                    timeout: 15000,
-                    maximumAge: 10000
-                }
-            );
-        } else {
+        // Check if geolocation is supported
+        if (!navigator.geolocation) {
             alert("Geolocation is not supported by your browser.");
             setIsLocating(false);
+            return;
         }
+
+        // Request position
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setCoords({ lat: latitude, lng: longitude });
+                setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                setIsLocating(false);
+            },
+            (error) => {
+                console.error("Geolocation Error Detail:", {
+                    code: error.code,
+                    message: error.message
+                });
+
+                let message = "Could not get location.";
+
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = "Location access denied. Please allow location permissions in your browser and device settings to use autofill.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = "Device location is turned off or unavailable. Please ensure your GPS/Location services are enabled at the system level.";
+                        break;
+                    case error.TIMEOUT:
+                        message = "The request to get user location timed out. Please try again or enter your location manually.";
+                        break;
+                    default:
+                        message = "An unknown error occurred while detecting location.";
+                        break;
+                }
+
+                alert(message);
+                setIsLocating(false);
+            },
+            {
+                enableHighAccuracy: true, // Prefer high accuracy for better results
+                timeout: 10000,           // 10 second timeout
+                maximumAge: 0            // No cached locations
+            }
+        );
     };
 
     const handleSubmit = (e: React.FormEvent) => {
