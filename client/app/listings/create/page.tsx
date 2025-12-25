@@ -30,6 +30,10 @@ export default function CreateListingPage() {
     const [isOffline, setIsOffline] = useState(false);
     const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: 9.03, lng: 38.74 }); // Default Addis
 
+    const [isLocating, setIsLocating] = useState(false);
+    const [locationModalState, setLocationModalState] = useState<'request' | 'locating' | 'error' | null>(null);
+    const [locationErrorCode, setLocationErrorCode] = useState<number | null>(null);
+
     // Monitor network status
     useEffect(() => {
         setIsOffline(!navigator.onLine);
@@ -50,7 +54,6 @@ export default function CreateListingPage() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const [isLocating, setIsLocating] = useState(false);
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -125,53 +128,41 @@ export default function CreateListingPage() {
     };
 
     const handleAutofillLocation = () => {
+        setLocationModalState('request');
+    };
+
+    const startLocating = () => {
+        setLocationModalState('locating');
         setIsLocating(true);
 
-        // Check if geolocation is supported
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser.");
+            setLocationModalState('error');
+            setLocationErrorCode(0); // Custom code for unsupported
             setIsLocating(false);
             return;
         }
 
-        // Request position
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 setCoords({ lat: latitude, lng: longitude });
                 setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
                 setIsLocating(false);
+                setLocationModalState(null);
             },
             (error) => {
-                console.error("Geolocation Error Detail:", {
-                    code: error.code,
-                    message: error.message
-                });
+                const errCode = error.code;
+                const errMsg = error.message;
+                console.error(`Geolocation Error [${errCode}]: ${errMsg}`);
 
-                let message = "Could not get location.";
-
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        message = "Location access denied. Please allow location permissions in your browser and device settings to use autofill.";
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        message = "Device location is turned off or unavailable. Please ensure your GPS/Location services are enabled at the system level.";
-                        break;
-                    case error.TIMEOUT:
-                        message = "The request to get user location timed out. Please try again or enter your location manually.";
-                        break;
-                    default:
-                        message = "An unknown error occurred while detecting location.";
-                        break;
-                }
-
-                alert(message);
+                setLocationErrorCode(errCode);
+                setLocationModalState('error');
                 setIsLocating(false);
             },
             {
-                enableHighAccuracy: true, // Prefer high accuracy for better results
-                timeout: 10000,           // 10 second timeout
-                maximumAge: 0            // No cached locations
+                enableHighAccuracy: true,
+                timeout: 15000, // Increased timeout
+                maximumAge: 0
             }
         );
     };
@@ -510,6 +501,146 @@ export default function CreateListingPage() {
                                         Use Photo
                                     </button>
                                 </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Location Permission & Troubleshooting Modal */}
+            {locationModalState && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+                    <div className="relative w-full max-w-md overflow-hidden rounded-[32px] bg-white shadow-2xl">
+
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setLocationModalState(null)}
+                            className="absolute top-6 right-6 z-10 rounded-full bg-gray-100 p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+
+                        <div className="p-8 pt-12 text-center">
+                            {locationModalState === 'request' && (
+                                <>
+                                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-green-600">
+                                        <MapPin className="h-10 w-10" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900">Turn On Your Location</h3>
+                                    <p className="mt-4 text-gray-600 leading-relaxed">
+                                        Please ensure your device's <b>Location/GPS</b> is switched ON so we can find your produce.
+                                    </p>
+                                    <div className="mt-8 space-y-3">
+                                        <button
+                                            onClick={startLocating}
+                                            className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-100"
+                                        >
+                                            I've turned it on, Proceed
+                                        </button>
+                                        <button
+                                            onClick={() => setLocationModalState(null)}
+                                            className="w-full rounded-2xl py-3 font-medium text-gray-400 hover:text-gray-600 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {locationModalState === 'locating' && (
+                                <>
+                                    <div className="relative mx-auto mb-8 flex h-24 w-24 items-center justify-center">
+                                        <div className="absolute inset-0 animate-ping rounded-full bg-green-100 opacity-75"></div>
+                                        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
+                                            <MapPin className="h-8 w-8" />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900">Finding Location...</h3>
+                                    <p className="mt-4 text-gray-600">
+                                        Communicating with satellites and network towers. This usually takes a few seconds.
+                                    </p>
+                                    <div className="mt-10">
+                                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                            <div className="h-full w-1/3 animate-progress rounded-full bg-green-600"></div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {locationModalState === 'error' && (
+                                <>
+                                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-red-600">
+                                        <MapPin className="h-10 w-10" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900">Location Missing</h3>
+
+                                    <div className="mt-6 rounded-2xl bg-gray-50 p-5 text-left border border-gray-100">
+                                        <p className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-2">
+                                            <Info className="h-4 w-4 text-blue-500" />
+                                            How to fix this:
+                                        </p>
+                                        <ul className="space-y-3 text-sm text-gray-600">
+                                            {locationErrorCode === 1 ? (
+                                                <>
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="font-bold text-green-600">1.</span>
+                                                        <span>Check your browser address bar for a blocked location icon and click <b>"Allow"</b>.</span>
+                                                    </li>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="font-bold text-green-600">1.</span>
+                                                        <span>Open your device's <b>Settings</b>.</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <span className="font-bold text-green-600">2.</span>
+                                                        <span>Search for <b>"Location Services"</b> and ensure the switch is <b>ON</b>.</span>
+                                                    </li>
+                                                </>
+                                            )}
+                                        </ul>
+                                    </div>
+
+                                    <div className="mt-8 flex flex-col gap-3">
+                                        <button
+                                            onClick={startLocating}
+                                            className="w-full rounded-2xl bg-gray-900 py-4 font-bold text-white hover:bg-black transition shadow-lg"
+                                        >
+                                            Try High Precision Again
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setLocationModalState('locating');
+                                                navigator.geolocation.getCurrentPosition(
+                                                    (pos) => {
+                                                        const { latitude, longitude } = pos.coords;
+                                                        setCoords({ lat: latitude, lng: longitude });
+                                                        setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                                                        setIsLocating(false);
+                                                        setLocationModalState(null);
+                                                    },
+                                                    (err) => {
+                                                        console.error("Low Accuracy Retry Failed", err);
+                                                        setLocationErrorCode(err.code);
+                                                        setLocationModalState('error');
+                                                        setIsLocating(false);
+                                                    },
+                                                    { enableHighAccuracy: false, timeout: 10000 }
+                                                );
+                                            }}
+                                            className="w-full rounded-2xl border-2 border-gray-900 py-3.5 font-bold text-gray-900 hover:bg-gray-50 transition"
+                                        >
+                                            Try WiFi/Network Only
+                                        </button>
+                                        <button
+                                            onClick={() => setLocationModalState(null)}
+                                            className="mt-2 w-full rounded-2xl py-2 font-medium text-gray-400 hover:text-gray-600 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
