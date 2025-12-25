@@ -1,5 +1,5 @@
-"use client";
-
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import ListingCard from './ListingCard';
 
 type Listing = {
@@ -24,11 +24,21 @@ type ListingsGridProps = {
 export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGridProps) {
   return (
     <div className="lg:w-3/4">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">Available Listings ({totalCount})</h2>
-        <div className="text-sm text-gray-500">
-          Showing {listings.length} of {totalCount} listings
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Available Listings ({totalCount})</h2>
+          <div className="text-sm text-gray-500">
+            Showing {listings.length} of {totalCount} listings
+          </div>
         </div>
+
+        <Link
+          href="/listings/create"
+          className="flex items-center justify-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 font-medium text-green-700 hover:bg-green-100 transition-colors border border-green-100 shadow-sm"
+        >
+          <Plus className="h-4 w-4" />
+          Add Item
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
