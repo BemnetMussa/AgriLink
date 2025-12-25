@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
     ChevronLeft,
     Wifi,
@@ -27,8 +27,24 @@ export default function CreateListingPage() {
     const [price, setPrice] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("Addis Ababa, Ethiopia");
-    const [isOffline, setIsOffline] = useState(true);
+    const [isOffline, setIsOffline] = useState(false);
     const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: 9.03, lng: 38.74 }); // Default Addis
+
+    // Monitor network status
+    useEffect(() => {
+        setIsOffline(!navigator.onLine);
+
+        const handleOnline = () => setIsOffline(false);
+        const handleOffline = () => setIsOffline(true);
+
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+
+        return () => {
+            window.removeEventListener("online", handleOnline);
+            window.removeEventListener("offline", handleOffline);
+        };
+    }, []);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -130,7 +146,32 @@ export default function CreateListingPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, logic to save locally or send to server
+
+        // Create new listing object
+        const newListing = {
+            id: Date.now(),
+            title: cropType || "Fresh Produce",
+            category: cropType || "Other", // Match filtering field
+            price: Number(price) || 0,
+            quantity: Number(quantity) || 0,
+            location: location,
+            farmer: "Abebe Bikila", // Mock current farmer
+            status: isOffline ? 'offline' : 'online',
+            syncStatus: isOffline ? 'pending' : 'synced',
+            image: photos[0]?.url || "/potatoes.png",
+            rating: 5.0,
+            soldQuantity: 0,
+            description: description,
+            createdAt: new Date().toISOString()
+        };
+
+        // Save to localStorage
+        const existingListings = JSON.parse(localStorage.getItem("local_listings") || "[]");
+        localStorage.setItem("local_listings", JSON.stringify([newListing, ...existingListings]));
+
+        // Alert user
+        alert(isOffline ? "Saved locally! It will sync when online." : "Listing posted successfully!");
+
         router.push("/listings");
     };
 
