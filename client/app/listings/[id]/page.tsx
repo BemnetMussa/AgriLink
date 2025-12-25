@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import {
     MapPin,
     MessageSquare,
@@ -22,9 +22,34 @@ import { sampleListings } from "@/data/sampleListings";
 
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const listing = sampleListings.find((item) => item.id === parseInt(id));
+    const [listing, setListing] = useState<any>(null);
+    const [activeImage, setActiveImage] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [activeImage, setActiveImage] = useState(listing?.image || "");
+    useEffect(() => {
+        // 1. Try sample data
+        let foundListing = sampleListings.find((item) => item.id === parseInt(id));
+
+        // 2. Try local storage if not in samples
+        if (!foundListing) {
+            const localItems = JSON.parse(localStorage.getItem("local_listings") || "[]");
+            foundListing = localItems.find((item: any) => item.id === parseInt(id));
+        }
+
+        if (foundListing) {
+            setListing(foundListing);
+            setActiveImage(foundListing.image);
+        }
+        setIsLoading(false);
+    }, [id]);
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-600 border-t-transparent"></div>
+            </div>
+        );
+    }
 
     if (!listing) {
         return (
