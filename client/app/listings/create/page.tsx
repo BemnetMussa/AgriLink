@@ -127,7 +127,6 @@ export default function CreateListingPage() {
     const handleAutofillLocation = () => {
         setIsLocating(true);
         if ("geolocation" in navigator) {
-            // This triggers the browser permission prompt
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
@@ -136,15 +135,43 @@ export default function CreateListingPage() {
                     setIsLocating(false);
                 },
                 (error) => {
-                    console.error("Error fetching location", error);
+                    console.error("Geolocation Error Detail:", {
+                        code: error.code,
+                        message: error.message
+                    });
+
                     let message = "Could not get location.";
                     if (error.code === error.PERMISSION_DENIED) {
-                        message = "Location permission denied.";
+                        message = "Location permission denied. Please enable it in browser settings.";
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        message = "Location information is unavailable.";
+                    } else if (error.code === error.TIMEOUT) {
+                        message = "Location request timed out. Trying again without high accuracy...";
+                        // Retry with lower accuracy if it timed out
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                const { latitude, longitude } = pos.coords;
+                                setCoords({ lat: latitude, lng: longitude });
+                                setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                                setIsLocating(false);
+                            },
+                            (err2) => {
+                                alert("Failed to detect location. Please enter it manually.");
+                                setIsLocating(false);
+                            },
+                            { timeout: 10000 }
+                        );
+                        return;
                     }
+
                     alert(message);
                     setIsLocating(false);
                 },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                {
+                    enableHighAccuracy: false, // Set to false for faster, more reliable fixes on desktop/wifi
+                    timeout: 15000,
+                    maximumAge: 10000
+                }
             );
         } else {
             alert("Geolocation is not supported by your browser.");
