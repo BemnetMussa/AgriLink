@@ -114,20 +114,6 @@ export default function ListingsPage() {
     <section className="bg-gray-50 min-h-screen">
       <div className="mx-auto max-w-7xl px-6 py-10">
 
-        {/* Top Action - Add Item Section */}
-        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-white p-6 border border-gray-100 shadow-sm">
-          <div>
-            <h2 className="text-lg font-bold text-gray-800">Ready to sell your harvest?</h2>
-            <p className="text-sm text-gray-500">Add your produce and connect with buyers instantly.</p>
-          </div>
-          <Link
-            href="/listings/create"
-            className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-8 py-3.5 font-bold text-white hover:bg-green-700 transition-all shadow-lg shadow-green-100 active:scale-95 whitespace-nowrap"
-          >
-            <Plus className="h-5 w-5" />
-            Add New Listing
-          </Link>
-        </div>
 
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Listings & Search</h1>
