@@ -1,179 +1,196 @@
 "use client";
 
-type Props = {
+type FilterPanelProps = {
   selectedCrops: string[];
   onCropToggle: (crop: string) => void;
-
-  selectedQuantity: string;
-  onQuantityChange: (q: string) => void;
-
-  selectedPrice: string;
-  onPriceChange: (p: string) => void;
-
-  selectedLocation: string;
-  onLocationChange: (l: string) => void;
-
+  priceRange: [number, number];
+  onPriceChange: (range: [number, number]) => void;
+  quantityRange: [number, number];
+  onQuantityChange: (range: [number, number]) => void;
   selectedLanguage: string;
   onLanguageChange: (lang: string) => void;
-
+  selectedLocation: string;
+  onLocationChange: (loc: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  mapViewEnabled: boolean;
+  onMapViewToggle: () => void;
+  onClearFilters: () => void;
 };
 
 const CROPS = [
-  "Tomatoes",
-  "Coffee Beans",
-  "Potatoes",
-  "Teff Grain",
-  "Cabbage",
-  "Onions",
-  "Bananas",
-  "Wheat Grain",
-  "Carrots",
-  "Barley Grain",
-];
-
-const QUANTITIES = [
-  "Any",
-  "0 - 100 Kg",
-  "100 - 500 Kg",
-  "500 - 1000 Kg",
-  "1000+ Kg",
-];
-
-const PRICES = [
-  "Any",
-  "0 - 50 ETB",
-  "50 - 100 ETB",
-  "100 - 200 ETB",
-  "200+ ETB",
-];
-
-const LOCATIONS = [
-  "All Locations",
-  "Addis Ababa",
-  "Oromia",
-  "Amhara",
-  "Sidama",
-  "Tigray",
-];
-
-const LANGUAGES = ["All","English", "Amharic", "Afaan Oromoo"];
-
-const SORT_OPTIONS = [
-  "Newest",
-  "Relevance",
-  "Price: Low to High",
-  "Price: High to Low",
+  'Tomatoes', 'Coffee Beans', 'Potatoes', 'Teff Grain', 'Cabbage',
+  'Onions', 'Bananas', 'Wheat Grain', 'Carrots', 'Barley Grain'
 ];
 
 export default function FilterPanel({
   selectedCrops,
   onCropToggle,
-  selectedQuantity,
-  onQuantityChange,
-  selectedPrice,
+  priceRange,
   onPriceChange,
-  selectedLocation,
-  onLocationChange,
+  quantityRange,
+  onQuantityChange,
   selectedLanguage,
   onLanguageChange,
+  selectedLocation,
+  onLocationChange,
   sortBy,
   onSortChange,
-}: Props) {
+  mapViewEnabled,
+  onMapViewToggle,
+  onClearFilters
+}: FilterPanelProps) {
   return (
-          <div className="rounded-xl text-gray-900 border bg-white p-4 ">
-            <h2 className="mb-4 text-lg font-semibold">Filters</h2>
+    <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+      <h2 className="mb-6 text-xl font-bold text-gray-900 tracking-tight">Filters</h2>
 
-            {/* Crop Type */}
-            <div className="mb-6">
-              <h3 className="mb-2 font-medium">Crop Type</h3>
-              {CROPS.map((crop) => (
-                <label key={crop} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedCrops.includes(crop)}
-                    onChange={() => onCropToggle(crop)}
-                    className="accent-green-600"
-                  />
-                  {crop}
-                </label>
-              ))}
-            </div>
+      {/* Crop Type */}
+      <div className="mb-8">
+        <h3 className="mb-3 font-medium text-gray-700">Crop Type</h3>
+        <div className="grid grid-cols-1 gap-2">
+          {CROPS.map((crop) => (
+            <label key={crop} className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={selectedCrops.includes(crop)}
+                onChange={() => onCropToggle(crop)}
+                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+              />
+              <span className="text-gray-600 group-hover:text-gray-900 transition-colors">{crop}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
-            {/* Location */}
-            <div className="mb-6">
-              <label className="mb-2 block font-medium">Location</label>
-              <select
-                value={selectedLocation}
-                onChange={(e) => onLocationChange(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 bg-white"
-              >
-                {LOCATIONS.map((loc) => (
-                  <option key={loc}>{loc}</option>
-                ))}
-              </select>
-            </div>
+      {/* Location */}
+      <div className="mb-8">
+        <h3 className="mb-3 font-medium text-gray-700">Location</h3>
+        <select
+          value={selectedLocation}
+          onChange={(e) => onLocationChange(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+        >
+          <option value="">All Regions</option>
+          <option value="Addis Ababa">Addis Ababa</option>
+          <option value="Oromia Region">Oromia Region</option>
+          <option value="Amhara Region">Amhara Region</option>
+          <option value="Sidama">Sidama</option>
+          <option value="Tigray Region">Tigray Region</option>
+        </select>
+      </div>
 
-            {/* Quantity */}
-            <div className="mb-6">
-              <label className="mb-2 block font-medium">Quantity (Kg)</label>
-              <select
-                value={selectedQuantity}
-                onChange={(e) => onQuantityChange(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 bg-white"
-              >
-                {QUANTITIES.map((q) => (
-                  <option key={q}>{q}</option>
-                ))}
-              </select>
-            </div>
+      {/* Quantity */}
+      <div className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-medium text-gray-700">Min Quantity (kg)</h3>
+          <span className="text-sm text-gray-500">At least {quantityRange[1]} kg</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="2000"
+          step="50"
+          value={quantityRange[1]}
+          onChange={(e) => onQuantityChange([0, parseInt(e.target.value)])}
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-600"
+        />
+      </div>
 
-            {/* Price */}
-            <div className="mb-6">
-              <label className="mb-2 block font-medium">Price (ETB)</label>
-              <select
-                value={selectedPrice}
-                onChange={(e) => onPriceChange(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 bg-white"
-              >
-                {PRICES.map((p) => (
-                  <option key={p}>{p}</option>
-                ))}
-              </select>
-            </div>
+      {/* Price */}
+      <div className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-medium text-gray-700">Max Price (ETB)</h3>
+          <span className="text-sm text-gray-500">Up to ETB {priceRange[1]}</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="500"
+          step="10"
+          value={priceRange[1]}
+          onChange={(e) => onPriceChange([0, parseInt(e.target.value)])}
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-600"
+        />
+      </div>
 
-            {/* Language */}
-            <div className="mb-6">
-              <label className="mb-2 block font-medium">Language</label>
-              <select
-                value={selectedLanguage}
-                onChange={(e) => onLanguageChange(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 bg-white"
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang}>{lang}</option>
-                ))}
-              </select>
-            </div>
+      {/* Language */}
+      <div className="mb-8">
+        <h3 className="mb-3 font-medium text-gray-700">Language</h3>
+        <select
+          value={selectedLanguage}
+          onChange={(e) => onLanguageChange(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+        >
+          <option value="English">English</option>
+          <option value="Amharic">Amharic</option>
+          <option value="Afaan Oromoo">Afaan Oromoo</option>
+        </select>
+      </div>
 
-            {/* Sort By */}
-            <div>
-              <h3 className="mb-2 font-medium">Sort By</h3>
-              {SORT_OPTIONS.map((option) => (
-                <label key={option} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="sort"
-                    checked={sortBy === option}
-                    onChange={() => onSortChange(option)}
-                    className="accent-green-600"
-                  />
-                  {option}
-                </label>
-              ))}
-            </div>
-            
-          </div>
+      {/* Sort By */}
+      <div className="mb-8">
+        <h3 className="mb-3 font-medium text-gray-700">Sort By</h3>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sortBy"
+              value="newest"
+              checked={sortBy === 'newest'}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Newest</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sortBy"
+              value="price-low"
+              checked={sortBy === 'price-low'}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Price (Low to High)</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="radio"
+              name="sortBy"
+              value="price-high"
+              checked={sortBy === 'price-high'}
+              onChange={(e) => onSortChange(e.target.value)}
+              className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Price (High to Low)</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Map-Dark View Toggle */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-gray-700">Map-Dark View</h3>
+          <button
+            type="button"
+            onClick={onMapViewToggle}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${mapViewEnabled ? 'bg-green-600' : 'bg-gray-300'
+              }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${mapViewEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      <button
+        onClick={onClearFilters}
+        className="w-full rounded-lg bg-gray-100 py-2.5 font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+      >
+        Clear All Filters
+      </button>
+    </div>
   );
 }

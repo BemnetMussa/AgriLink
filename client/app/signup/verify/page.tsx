@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Clock, Smartphone } from "lucide-react";
-import Link from "next/link";
 
-export default function VerifyOTPPage() {
+function VerifyOTPContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +47,7 @@ export default function VerifyOTPPage() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     // TODO: Verify OTP with backend
     setTimeout(() => {
       setIsLoading(false);
@@ -122,14 +121,14 @@ export default function VerifyOTPPage() {
                   />
                 ))}
               </div>
-              
+
               {/* Timer and Resend */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-gray-600">
                   <Clock size={16} />
                   <span className="text-sm">00:{timer.toString().padStart(2, '0')}</span>
                 </div>
-                
+
                 <button
                   type="button"
                   onClick={handleResendOTP}
@@ -165,5 +164,17 @@ export default function VerifyOTPPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyOTPPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-green-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+      </div>
+    }>
+      <VerifyOTPContent />
+    </Suspense>
   );
 }
