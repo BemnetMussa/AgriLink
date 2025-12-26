@@ -34,9 +34,9 @@ export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGrid
 
         <Link
           href="/listings/create"
-          className="flex items-center justify-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 font-medium text-green-700 hover:bg-green-100 transition-colors border border-green-100 shadow-sm"
+          className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 font-bold text-white hover:bg-green-700 transition-all shadow-md shadow-green-200 active:scale-95"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
           Add Item
         </Link>
       </div>
