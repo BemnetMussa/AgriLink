@@ -25,6 +25,17 @@ export default function SearchBar({
           className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-gray-900 placeholder:text-gray-400 focus:border-green-600 focus:outline-none focus:ring-4 focus:ring-green-50 shadow-sm transition-all"
         />
       </div>
+
+      <button
+        onClick={() => {
+          const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+          if (input) onSearch(input.value);
+        }}
+        className="rounded-xl bg-gray-900 px-6 py-3 font-bold text-white hover:bg-black transition-all shadow-md active:scale-95"
+      >
+        Search
+      </button>
+
       {showSellButton && (
         <Link
           href="/listings/create"
