@@ -54,14 +54,6 @@ export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGrid
           />
         ))}
       </div>
-
-      {listings.length === 0 && (
-        <div className="py-12 text-center">
-          <div className="text-4xl mb-4">🌾</div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No listings found</h3>
-          <p className="text-gray-500">Try adjusting your filters or check back later</p>
-        </div>
-      )}
     </div>
   );
 }

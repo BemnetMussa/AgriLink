@@ -80,6 +80,7 @@ export default function ListingCard({
 
   const syncInfo = getSyncStatus();
 
+export default function ListingCard(props: any) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition-shadow">
       <Link href={`/listings/${id}`}>

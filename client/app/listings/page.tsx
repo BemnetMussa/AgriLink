@@ -8,8 +8,51 @@ import { sampleListings, Listing } from "@/data/sampleListings";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
+const ALL_LISTINGS = [
+  {
+    id: 1,
+    title: "Organic Red Tomatoes",
+    price: 50,
+    quantity: 500,
+    location: "Addis Ababa",
+    farmer: "Abebe Kebede",
+    status: "online",
+    syncStatus: "synced",
+    image: "/tomatoes.png",
+    crop: "Tomatoes",
+  },
+  {
+    id: 2,
+    title: "Premium Ethiopian Coffee Beans",
+    price: 350,
+    quantity: 150,
+    location: "Sidama",
+    farmer: "Tadele Fikadu",
+    status: "offline",
+    syncStatus: "pending",
+    image: "/coffee bean.png",
+    crop: "Coffee Beans",
+  },
+  {
+    id: 3,
+    title: "Local Highland Potatoes",
+    price: 30,
+    quantity: 1200,
+    location: "Oromia",
+    farmer: "Chaltu Biratu",
+    status: "online",
+    syncStatus: "online-only",
+    image: "/potatoes.png",
+    crop: "Potatoes",
+  },
+];
+
 export default function ListingsPage() {
-  // ✅ REQUIRED STATES
+  /* =======================
+     STATE
+  ======================= */
+  const [search, setSearch] = useState("");
+
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [quantityRange, setQuantityRange] = useState<[number, number]>([0, 0]);
@@ -90,8 +133,10 @@ export default function ListingsPage() {
     });
   }, [allListings, searchQuery, selectedCrops, priceRange, quantityRange, sortBy, selectedLocation]);
 
-  // Toggle crop selection
-  const handleCropToggle = (crop: string) => {
+  /* =======================
+     HELPERS
+  ======================= */
+  const toggleCrop = (crop: string) => {
     setSelectedCrops((prev) =>
       prev.includes(crop)
         ? prev.filter((c) => c !== crop)
@@ -110,9 +155,48 @@ export default function ListingsPage() {
     setMapViewEnabled(false);
   };
 
+  /* =======================
+     FILTER
+  ======================= */
+  let filtered = ALL_LISTINGS.filter((l) => {
+    const cropMatch =
+      selectedCrops.length === 0 || selectedCrops.includes(l.crop);
+
+    const searchMatch = l.title
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const locationMatch =
+      selectedLocation === "All Locations" ||
+      l.location === selectedLocation;
+
+    return (
+      cropMatch &&
+      searchMatch &&
+      locationMatch &&
+      matchQuantity(l.quantity) &&
+      matchPrice(l.price)
+    );
+  });
+
+  /* =======================
+     SORT
+  ======================= */
+  if (sortBy === "Price: Low to High") {
+    filtered = [...filtered].sort((a, b) => a.price - b.price);
+  }
+
+  if (sortBy === "Price: High to Low") {
+    filtered = [...filtered].sort((a, b) => b.price - a.price);
+  }
+
+  /* =======================
+     UI
+  ======================= */
   return (
-    <section className="bg-gray-50 min-h-screen">
-      <div className="mx-auto max-w-7xl px-6 py-10">
+    <section className="min-h-screen bg-gray-50">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <SearchBar onSearch={setSearch} />
 
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Listings & Search</h1>
@@ -143,12 +227,12 @@ export default function ListingsPage() {
               onMapViewToggle={() => setMapViewEnabled(!mapViewEnabled)}
               onClearFilters={handleClearFilters}
             />
-          </div>
+          </aside>
 
           {/* Listings */}
           <ListingsGrid listings={filteredListings} totalCount={filteredListings.length} />
         </div>
-
+        
       </div>
     </section>
   );
