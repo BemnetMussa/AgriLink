@@ -523,25 +523,38 @@ export default function CreateListingPage() {
                         <div className="p-8 pt-12 text-center">
                             {locationModalState === 'request' && (
                                 <>
-                                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-green-600">
-                                        <MapPin className="h-10 w-10" />
+                                    <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-green-600 border-2 border-green-100">
+                                        <MapPin className="h-10 w-10 text-green-600" />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-gray-900">Turn On Your Location</h3>
-                                    <p className="mt-4 text-gray-600 leading-relaxed">
-                                        Please ensure your device's <b>Location/GPS</b> is switched ON so we can find your produce.
-                                    </p>
+                                    <h3 className="text-2xl font-bold text-gray-900">Device Location Required</h3>
+
+                                    <div className="mt-6 text-left space-y-4 rounded-3xl bg-gray-50 p-6 border border-gray-100">
+                                        <div className="flex gap-4">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-bold text-sm shadow-sm">1</div>
+                                            <p className="text-gray-700 leading-tight">Open your device's <b>Quick Settings</b> (swipe down from the top or open Settings).</p>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-bold text-sm shadow-sm">2</div>
+                                            <p className="text-gray-700 leading-tight">Ensure <b>Location / GPS</b> is toggled <b>ON</b> so we can find your farm.</p>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-sm shadow-sm">3</div>
+                                            <p className="text-gray-700 leading-tight text-blue-800">Once turned on, click the button below to automatically fill your address.</p>
+                                        </div>
+                                    </div>
+
                                     <div className="mt-8 space-y-3">
                                         <button
                                             onClick={startLocating}
-                                            className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-100"
+                                            className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-100 active:scale-[0.98]"
                                         >
-                                            I've turned it on, Proceed
+                                            Locate My Produce
                                         </button>
                                         <button
                                             onClick={() => setLocationModalState(null)}
                                             className="w-full rounded-2xl py-3 font-medium text-gray-400 hover:text-gray-600 transition"
                                         >
-                                            Cancel
+                                            Enter Manually
                                         </button>
                                     </div>
                                 </>

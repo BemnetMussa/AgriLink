@@ -3,8 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import FilterPanel from "@/component/listings/FilterPanel";
 import ListingsGrid from "@/component/listings/ListingsGrid";
-import SearchBar from "@/component/listings/SearchBar";
-import { sampleListings } from "@/data/sampleListings";
+import SearchBar, { SearchBarProps } from "@/component/listings/SearchBar";
+import { sampleListings, Listing } from "@/data/sampleListings";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -20,16 +20,16 @@ export default function ListingsPage() {
   const [mapViewEnabled, setMapViewEnabled] = useState(false);
 
   // State to hold all listings (sample + local storage)
-  const [allListings, setAllListings] = useState(sampleListings);
+  const [allListings, setAllListings] = useState<Listing[]>(sampleListings);
 
   // Load local storage listings on component mount
   useEffect(() => {
     const localItems = JSON.parse(localStorage.getItem("local_listings") || "[]");
     if (localItems.length > 0) {
-      setAllListings((prevListings) => {
+      setAllListings((prevListings: Listing[]) => {
         // Correctly merge and deduplicate by ID
         const combined = [...prevListings, ...localItems];
-        const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        const unique = Array.from(new Map(combined.map((item: Listing) => [item.id, item])).values());
         return unique;
       });
     }
@@ -38,7 +38,7 @@ export default function ListingsPage() {
   // Memoized filtering and scoring logic
   const filteredListings = useMemo(() => {
     // 1. First, apply hard filters
-    let result = allListings.filter(item => {
+    let result = allListings.filter((item: Listing) => {
       // Search filter (title, farmer, location)
       const matchesSearch = !searchQuery ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -63,7 +63,7 @@ export default function ListingsPage() {
     });
 
     // 2. Apply Sorting & Relevance Scoring
-    return result.sort((a, b) => {
+    return result.sort((a: Listing, b: Listing) => {
       // Custom sorting for 'relevance' (highest score first)
       if (sortBy === 'newest') {
         // Calculate relevance scores if searching
@@ -113,7 +113,6 @@ export default function ListingsPage() {
   return (
     <section className="bg-gray-50 min-h-screen">
       <div className="mx-auto max-w-7xl px-6 py-10">
-
 
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Listings & Search</h1>

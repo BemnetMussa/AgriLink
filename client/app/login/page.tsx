@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function LoginPage() {
   return (
     <section className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm border">
+      <div className="w-full text-gray-900 max-w-md rounded-xl bg-white p-8 shadow-sm border">
         
         {/* Header */}
         <div className="mb-6 text-center">

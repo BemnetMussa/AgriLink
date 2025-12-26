@@ -30,21 +30,6 @@ export default function ListingCard({
   rating,
   soldQuantity
 }: ListingCardProps) {
-  // Get emoji based on crop type
-  const getEmoji = (title: string) => {
-    if (title.toLowerCase().includes('tomato')) return '🍅';
-    if (title.toLowerCase().includes('coffee')) return '☕';
-    if (title.toLowerCase().includes('potato')) return '🥔';
-    if (title.toLowerCase().includes('teff')) return '🌾';
-    if (title.toLowerCase().includes('cabbage')) return '🥬';
-    if (title.toLowerCase().includes('onion')) return '🧅';
-    if (title.toLowerCase().includes('banana')) return '🍌';
-    if (title.toLowerCase().includes('wheat')) return '🌾';
-    if (title.toLowerCase().includes('carrot')) return '🥕';
-    if (title.toLowerCase().includes('barley')) return '🌾';
-    return '🌱';
-  };
-
   // Get sync status display
   const getSyncStatus = () => {
     switch (syncStatus) {
@@ -74,7 +59,6 @@ export default function ListingCard({
         };
     }
   };
-
 
   // Helper to render stars
   const renderStars = () => {
@@ -114,43 +98,40 @@ export default function ListingCard({
         </div>
 
         {/* Card Content */}
-        <div className="p-5">
+        <div className="p-4">
           {/* Title */}
-          <h3 className="mb-2 text-lg font-semibold text-gray-800 line-clamp-2">
+          <h3 className="mb-1 text-base font-semibold text-gray-800 line-clamp-1">
             {title}
           </h3>
 
           {/* Rating and Sold Quantity */}
-          <div className="mb-3 flex items-center gap-2 text-sm">
-            <div className="flex items-center gap-1">
+          <div className="mb-2 flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-0.5">
               {renderStars()}
-              <span className="ml-1 text-gray-600">{rating.toFixed(1)}</span>
+              <span className="ml-1 text-gray-500">{rating.toFixed(1)}</span>
             </div>
-            <span className="text-gray-400">•</span>
-            <span className="text-gray-600">{soldQuantity} Kg sold</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-gray-500">{soldQuantity} sold</span>
           </div>
 
-          {/* Location */}
-          <div className="mb-3 flex items-center gap-1 text-sm text-gray-600">
-            <MapPin className="h-4 w-4" />
-            <span>{location}</span>
+          {/* Location & Farmer */}
+          <div className="mb-3 flex items-center justify-between text-[11px] text-gray-500">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              <span className="truncate max-w-[100px]">{location}</span>
+            </div>
+            <span className="truncate">Farmer: {farmer}</span>
           </div>
-
-          {/* Farmer */}
-          <div className="mb-3 text-sm text-gray-500">Farmer: {farmer}</div>
 
           {/* Price and Quantity */}
-          <div className="mb-4 flex items-center gap-2 flex-wrap">
-            <span className="text-xl font-bold text-green-600">ETB {price}/Kg</span>
-            <span className="text-gray-500">•</span>
-            <span className="text-gray-600">{quantity} Kg available</span>
-          </div>
-
-          {/* Sync Status */}
-          <div className="mb-4 flex items-center gap-2">
-            <div className={`flex items-center gap-1 text-sm ${syncInfo.color}`}>
-              {syncInfo.icon}
-              <span>{syncInfo.text}</span>
+          <div className="flex items-end justify-between">
+            <div className="flex flex-col">
+              <span className="text-sm text-gray-400 font-medium">Price</span>
+              <span className="text-lg font-bold text-green-600 leading-none">ETB {price}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Stock</span>
+              <span className="text-sm font-semibold text-gray-700">{quantity} Kg</span>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { Search, Plus } from 'lucide-react';
 import Link from 'next/link';
 
-type SearchBarProps = {
+export type SearchBarProps = {
   onSearch: (query: string) => void;
   placeholder?: string;
   showSellButton?: boolean;

@@ -1,7 +1,5 @@
 "use client";
 
-import { Filter } from 'lucide-react';
-
 type FilterPanelProps = {
   selectedCrops: string[];
   onCropToggle: (crop: string) => void;
@@ -20,6 +18,11 @@ type FilterPanelProps = {
   onClearFilters: () => void;
 };
 
+const CROPS = [
+  'Tomatoes', 'Coffee Beans', 'Potatoes', 'Teff Grain', 'Cabbage',
+  'Onions', 'Bananas', 'Wheat Grain', 'Carrots', 'Barley Grain'
+];
+
 export default function FilterPanel({
   selectedCrops,
   onCropToggle,
@@ -37,31 +40,23 @@ export default function FilterPanel({
   onMapViewToggle,
   onClearFilters
 }: FilterPanelProps) {
-  const crops = [
-    'Tomatoes', 'Coffee Beans', 'Potatoes', 'Teff Grain', 'Cabbage',
-    'Onions', 'Bananas', 'Wheat Grain', 'Carrots', 'Barley Grain'
-  ];
-
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <div className="mb-6 flex items-center gap-2">
-        <Filter className="h-5 w-5 text-gray-600" />
-        <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-      </div>
+    <div className="rounded-2xl bg-white p-6 ring-1 ring-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+      <h2 className="mb-6 text-xl font-bold text-gray-900 tracking-tight">Filters</h2>
 
       {/* Crop Type */}
       <div className="mb-8">
         <h3 className="mb-3 font-medium text-gray-700">Crop Type</h3>
-        <div className="space-y-2">
-          {crops.map(crop => (
-            <label key={crop} className="flex items-center gap-3 cursor-pointer">
+        <div className="grid grid-cols-1 gap-2">
+          {CROPS.map((crop) => (
+            <label key={crop} className="flex items-center gap-3 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={selectedCrops.includes(crop)}
                 onChange={() => onCropToggle(crop)}
-                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
               />
-              <span className="text-gray-700">{crop}</span>
+              <span className="text-gray-600 group-hover:text-gray-900 transition-colors">{crop}</span>
             </label>
           ))}
         </div>

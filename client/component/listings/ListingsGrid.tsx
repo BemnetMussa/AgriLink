@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import { Plus } from 'lucide-react';
 import ListingCard from './ListingCard';
 
 type Listing = {
@@ -24,10 +22,17 @@ type ListingsGridProps = {
 export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGridProps) {
   return (
     <div className="lg:w-3/4">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-800">Available Listings ({totalCount})</h2>
-        <div className="text-sm text-gray-500">
-          Showing {listings.length} of {totalCount} listings
+      <div className="mb-8 flex items-center justify-between border-b border-gray-100 pb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Available Listings</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Browse through {totalCount} high-quality agricultural products
+          </p>
+        </div>
+        <div className="text-right hidden sm:block">
+          <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+            {listings.length} Results
+          </span>
         </div>
       </div>
 
