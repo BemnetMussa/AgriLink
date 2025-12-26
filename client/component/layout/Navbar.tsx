@@ -7,51 +7,40 @@ import { User } from "lucide-react";
 export default function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const isListings = pathname.startsWith("/listings");
+  const isListings = pathname === "/listings";
+  const isSell = pathname === "/listings/create";
 
   return (
-    <header className="w-full border-b bg-white px-4 sm:px-6 lg:px-8">
+    <header className="w-full border-b bg-white px-4 sm:px-6 lg:px-8 shadow-sm relative z-50">
       <nav className="mx-auto flex max-w-7xl items-center justify-between py-4">
 
-        {/* Left: Logo & Navigation*/}
-        <div className="flex items-center gap-10">
-          <div className="flex items-center gap-6 text-sm">
+        {/* Left: Logo */}
+        <Link href="/" className="text-2xl font-bold text-green-600 tracking-tight flex items-center gap-2">
+          <span className="bg-green-600 text-white p-1 rounded-lg">Agri</span>Link
+        </Link>
+
+        {/* Right: Navigation & Actions */}
+        <div className="flex items-center gap-8 text-sm ml-auto">
+          <div className="flex items-center gap-8 mr-4">
             <Link
               href="/"
-              className={`font-medium transition ${isHome ? "text-green-600 font-semibold" : "text-gray-600 hover:text-green-600"}`}
+              className={`font-medium transition pb-1 border-b-2 ${isHome ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
             >
               Home
             </Link>
             <Link
               href="/listings"
-              className={`font-medium transition ${isListings ? "text-green-600 font-semibold" : "text-gray-600 hover:text-green-600"}`}
+              className={`font-medium transition pb-1 border-b-2 ${isListings ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
             >
               Listings
             </Link>
+            <Link
+              href="/listings/create"
+              className={`font-medium transition pb-1 border-b-2 ${isSell ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
+            >
+              Sell Produce
+            </Link>
           </div>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-5 text-sm ml-auto">
-          <Link
-            href="/listings/create"
-            className={`rounded-md px-4 py-2 font-medium transition ${isHome
-              ? "bg-green-600 text-white hover:bg-green-700"
-              : "border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-sm"
-              }`}
-          >
-            Sell Produce
-          </Link>
-
-          <Link
-            href="/listings"
-            className={`rounded-md px-4 py-2 font-medium transition ${isListings
-              ? "bg-green-600 text-white hover:bg-green-700"
-              : "border border-gray-300 text-gray-700 hover:bg-gray-100 shadow-sm"
-              }`}
-          >
-            Browse Listings
-          </Link>
 
           {!isListings ? (
             <div className="flex items-center gap-4 ml-2">
