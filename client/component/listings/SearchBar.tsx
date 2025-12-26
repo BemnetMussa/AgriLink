@@ -31,7 +31,7 @@ export default function SearchBar({
           const input = document.querySelector('input[type="text"]') as HTMLInputElement;
           if (input) onSearch(input.value);
         }}
-        className="rounded-xl bg-gray-900 px-6 py-3 font-bold text-white hover:bg-black transition-all shadow-md active:scale-95"
+        className="rounded-xl bg-green-600 px-10 py-3 font-bold text-white hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95 whitespace-nowrap"
       >
         Search
       </button>
