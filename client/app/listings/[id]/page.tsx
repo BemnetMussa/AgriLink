@@ -105,7 +105,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
                             {/* Thumbnails */}
                             <div className="grid grid-cols-4 gap-4">
-                                {(listing.gallery || [listing.image]).map((img, idx) => (
+                                {(listing.gallery || [listing.image]).map((img: string, idx: number) => (
                                     <button
                                         key={idx}
                                         onClick={() => setActiveImage(img)}
