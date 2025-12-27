@@ -3,56 +3,13 @@
 import { useState, useMemo, useEffect } from "react";
 import FilterPanel from "@/component/listings/FilterPanel";
 import ListingsGrid from "@/component/listings/ListingsGrid";
-import SearchBar, { SearchBarProps } from "@/component/listings/SearchBar";
+import SearchBar from "@/component/listings/SearchBar";
 import { sampleListings, Listing } from "@/data/sampleListings";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-
-const ALL_LISTINGS = [
-  {
-    id: 1,
-    title: "Organic Red Tomatoes",
-    price: 50,
-    quantity: 500,
-    location: "Addis Ababa",
-    farmer: "Abebe Kebede",
-    status: "online",
-    syncStatus: "synced",
-    image: "/tomatoes.png",
-    crop: "Tomatoes",
-  },
-  {
-    id: 2,
-    title: "Premium Ethiopian Coffee Beans",
-    price: 350,
-    quantity: 150,
-    location: "Sidama",
-    farmer: "Tadele Fikadu",
-    status: "offline",
-    syncStatus: "pending",
-    image: "/coffee bean.png",
-    crop: "Coffee Beans",
-  },
-  {
-    id: 3,
-    title: "Local Highland Potatoes",
-    price: 30,
-    quantity: 1200,
-    location: "Oromia",
-    farmer: "Chaltu Biratu",
-    status: "online",
-    syncStatus: "online-only",
-    image: "/potatoes.png",
-    crop: "Potatoes",
-  },
-];
 
 export default function ListingsPage() {
   /* =======================
      STATE
   ======================= */
-  const [search, setSearch] = useState("");
-
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [quantityRange, setQuantityRange] = useState<[number, number]>([0, 0]);
@@ -76,7 +33,7 @@ export default function ListingsPage() {
         return unique;
       });
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   // Memoized filtering and scoring logic
   const filteredListings = useMemo(() => {
@@ -88,7 +45,7 @@ export default function ListingsPage() {
         item.farmer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.location.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Crop category filter (Default to "Other" if missing or match exact)
+      // Crop category filter
       const matchesCrop = selectedCrops.length === 0 ||
         selectedCrops.includes(item.category) ||
         (selectedCrops.includes("Other") && !item.category);
@@ -96,10 +53,10 @@ export default function ListingsPage() {
       // Location filter
       const matchesLocation = !selectedLocation || item.location === selectedLocation;
 
-      // Price filter (Max Price Requirement)
+      // Price filter
       const matchesPrice = item.price <= priceRange[1];
 
-      // Quantity filter (Min Quantity Requirement - Buyer needs at least this much)
+      // Quantity filter
       const matchesQuantity = item.quantity >= quantityRange[1];
 
       return matchesSearch && matchesCrop && matchesLocation && matchesPrice && matchesQuantity;
@@ -107,9 +64,7 @@ export default function ListingsPage() {
 
     // 2. Apply Sorting & Relevance Scoring
     return result.sort((a: Listing, b: Listing) => {
-      // Custom sorting for 'relevance' (highest score first)
       if (sortBy === 'newest') {
-        // Calculate relevance scores if searching
         if (searchQuery) {
           const getScore = (item: typeof a) => {
             let score = 0;
@@ -123,7 +78,7 @@ export default function ListingsPage() {
           const scoreB = getScore(b);
           if (scoreA !== scoreB) return scoreB - scoreA;
         }
-        return b.id - a.id; // Fallback to newest
+        return b.id - a.id;
       }
 
       if (sortBy === 'price-low') return a.price - b.price;
@@ -133,10 +88,7 @@ export default function ListingsPage() {
     });
   }, [allListings, searchQuery, selectedCrops, priceRange, quantityRange, sortBy, selectedLocation]);
 
-  /* =======================
-     HELPERS
-  ======================= */
-  const toggleCrop = (crop: string) => {
+  const handleCropToggle = (crop: string) => {
     setSelectedCrops((prev) =>
       prev.includes(crop)
         ? prev.filter((c) => c !== crop)
@@ -144,7 +96,6 @@ export default function ListingsPage() {
     );
   };
 
-  // Clear all filters
   const handleClearFilters = () => {
     setSelectedCrops([]);
     setPriceRange([0, 1000]);
@@ -156,60 +107,23 @@ export default function ListingsPage() {
   };
 
   /* =======================
-     FILTER
-  ======================= */
-  let filtered = ALL_LISTINGS.filter((l) => {
-    const cropMatch =
-      selectedCrops.length === 0 || selectedCrops.includes(l.crop);
-
-    const searchMatch = l.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
-
-    const locationMatch =
-      selectedLocation === "All Locations" ||
-      l.location === selectedLocation;
-
-    return (
-      cropMatch &&
-      searchMatch &&
-      locationMatch &&
-      matchQuantity(l.quantity) &&
-      matchPrice(l.price)
-    );
-  });
-
-  /* =======================
-     SORT
-  ======================= */
-  if (sortBy === "Price: Low to High") {
-    filtered = [...filtered].sort((a, b) => a.price - b.price);
-  }
-
-  if (sortBy === "Price: High to Low") {
-    filtered = [...filtered].sort((a, b) => b.price - a.price);
-  }
-
-  /* =======================
      UI
   ======================= */
   return (
     <section className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <SearchBar onSearch={setSearch} />
+      <div className="mx-auto max-w-[1440px] px-6 py-10">
 
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Listings & Search</h1>
 
-        {/* Search */}
+        {/* Search Bar Container */}
         <div className="mb-8">
           <SearchBar onSearch={setSearchQuery} showSellButton={false} />
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-
-          {/* Filters */}
-          <div className="lg:w-1/4">
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* Sidebar Filters */}
+          <aside className="lg:w-[280px] shrink-0">
             <FilterPanel
               selectedCrops={selectedCrops}
               onCropToggle={handleCropToggle}
@@ -229,10 +143,12 @@ export default function ListingsPage() {
             />
           </aside>
 
-          {/* Listings */}
-          <ListingsGrid listings={filteredListings} totalCount={filteredListings.length} />
+          {/* Main Listings Grid */}
+          <main className="flex-1">
+            <ListingsGrid listings={filteredListings} totalCount={filteredListings.length} />
+          </main>
         </div>
-        
+
       </div>
     </section>
   );

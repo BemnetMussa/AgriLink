@@ -137,34 +137,48 @@ export default function CreateListingPage() {
 
         if (!navigator.geolocation) {
             setLocationModalState('error');
-            setLocationErrorCode(0); // Custom code for unsupported
+            setLocationErrorCode(0);
             setIsLocating(false);
             return;
         }
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setCoords({ lat: latitude, lng: longitude });
-                setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                setIsLocating(false);
-                setLocationModalState(null);
-            },
-            (error) => {
-                const errCode = error.code;
-                const errMsg = error.message;
-                console.error(`Geolocation Error [${errCode}]: ${errMsg}`);
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
 
-                setLocationErrorCode(errCode);
-                setLocationModalState('error');
-                setIsLocating(false);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 15000, // Increased timeout
-                maximumAge: 0
+        const successCallback = (position: GeolocationPosition) => {
+            const { latitude, longitude } = position.coords;
+            setCoords({ lat: latitude, lng: longitude });
+            setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+            setIsLocating(false);
+            setLocationModalState(null);
+        };
+
+        const errorCallback = (error: GeolocationPositionError) => {
+            const errCode = error.code;
+            const errMsg = error.message;
+
+            // If timeout or position unavailable on high accuracy, try once more with low accuracy
+            if ((errCode === 3 || errCode === 2) && options.enableHighAccuracy) {
+                console.warn("High accuracy geolocation timed out/failed, falling back to network...");
+                navigator.geolocation.getCurrentPosition(successCallback, (fallbackError) => {
+                    console.error(`Geolocation Final Error [${fallbackError.code}]: ${fallbackError.message}`);
+                    setLocationErrorCode(fallbackError.code);
+                    setLocationModalState('error');
+                    setIsLocating(false);
+                }, { enableHighAccuracy: false, timeout: 15000 });
+                return;
             }
-        );
+
+            console.error(`Geolocation Error [${errCode}]: ${errMsg}`);
+            setLocationErrorCode(errCode);
+            setLocationModalState('error');
+            setIsLocating(false);
+        };
+
+        navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
     };
 
     const handleSubmit = (e: React.FormEvent) => {

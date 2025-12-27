@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import {Globe,WifiOff,Lock,Users,Bell, MapPin,} from "lucide-react";
+import { Globe, WifiOff, Lock, Users, Bell, MapPin, } from "lucide-react";
 import { Smartphone, Wallet, RefreshCw } from "lucide-react";
 
 export default function HomePage() {
@@ -10,7 +10,7 @@ export default function HomePage() {
       <section className="bg-white">
         <div className="mx-auto max-w-7xl px-8 sm:px-10 lg:pl-12 lg:pr-20 pt-12 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-            
+
             {/* LEFT */}
             <div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
@@ -35,7 +35,7 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/sell"
+                  href="/listings/create"
                   className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
                 >
                   Sell Your Produce
@@ -69,7 +69,7 @@ export default function HomePage() {
           </h2>
 
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-10">
-            
+
             <div className="bg-white rounded-xl border p-8 text-center shadow-sm">
               <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-green-50">
                 <Smartphone className="h-6 w-6 text-green-600" />

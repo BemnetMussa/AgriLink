@@ -30,36 +30,6 @@ export default function ListingCard({
   rating,
   soldQuantity
 }: ListingCardProps) {
-  // Get sync status display
-  const getSyncStatus = () => {
-    switch (syncStatus) {
-      case 'synced':
-        return {
-          icon: <CheckCircle className="h-4 w-4" />,
-          text: 'Offline Synced',
-          color: 'text-blue-600'
-        };
-      case 'pending':
-        return {
-          icon: <Clock className="h-4 w-4" />,
-          text: 'Sync Pending',
-          color: 'text-yellow-600'
-        };
-      case 'online-only':
-        return {
-          icon: <Wifi className="h-4 w-4" />,
-          text: 'Online Only',
-          color: 'text-gray-600'
-        };
-      default:
-        return {
-          icon: <CheckCircle className="h-4 w-4" />,
-          text: 'Synced',
-          color: 'text-gray-600'
-        };
-    }
-  };
-
   // Helper to render stars
   const renderStars = () => {
     const stars = [];
@@ -67,20 +37,15 @@ export default function ListingCard({
     const hasHalfStar = rating % 1 >= 0.5;
 
     for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<span key={i} className="text-yellow-400">★</span>);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">★</span>);
-      } else {
-        stars.push(<span key={i} className="text-gray-300">★</span>);
-      }
+      stars.push(
+        <span key={i} className={i < fullStars ? "text-yellow-400" : (i === fullStars && hasHalfStar ? "text-yellow-400" : "text-gray-300")}>
+          ★
+        </span>
+      );
     }
     return stars;
   };
 
-  const syncInfo = getSyncStatus();
-
-export default function ListingCard(props: any) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-md transition-shadow">
       <Link href={`/listings/${id}`}>

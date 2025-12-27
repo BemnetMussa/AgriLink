@@ -21,7 +21,7 @@ type ListingsGridProps = {
 
 export default function ListingsGrid({ listings, totalCount = 10 }: ListingsGridProps) {
   return (
-    <div className="lg:w-3/4">
+    <div className="w-full">
       <div className="mb-8 flex items-center justify-between border-b border-gray-100 pb-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Available Listings</h2>
