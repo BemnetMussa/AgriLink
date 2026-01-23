@@ -4,24 +4,35 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Globe, Wifi, Smartphone } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignupPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [language, setLanguage] = useState("english");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
+  const { requestOTP } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    
+    if (phoneNumber.length !== 9) {
+      setError("Please enter a valid 9-digit phone number");
+      return;
+    }
+
     setIsLoading(true);
     
-    // TODO: Send OTP to phone number
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await requestOTP(phoneNumber, "REGISTRATION");
+      router.push(`/signup/verify?phone=${encodeURIComponent(phoneNumber)}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
       setIsLoading(false);
-      // Redirect to OTP verification page
-      router.push("/onboarding/signup/verify?phone=" + encodeURIComponent(phoneNumber));
-    }, 1000);
+    }
   };
 
   return (
@@ -74,6 +85,12 @@ export default function SignupPage() {
             <h3 className="text-lg font-semibold text-gray-900">Mobile Number</h3>
           </div>
           
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -86,7 +103,13 @@ export default function SignupPage() {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 9) {
+                      setPhoneNumber(value);
+                      setError("");
+                    }
+                  }}
                   placeholder="9XXXXXXXX"
                   className="flex-1 px-4 py-3 text-gray-900 focus:outline-none"
                   required

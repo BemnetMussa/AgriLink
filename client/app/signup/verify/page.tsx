@@ -3,21 +3,24 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Clock, Smartphone } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 function VerifyOTPContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { loginWithOTP, requestOTP } = useAuth();
 
   useEffect(() => {
     const phone = searchParams.get("phone");
     if (phone) {
       setPhoneNumber(phone);
     } else {
-      router.push("/onboarding/signup");
+      router.push("/signup");
     }
   }, [searchParams, router]);
 
@@ -35,6 +38,7 @@ function VerifyOTPContent() {
       const newOtp = [...otp];
       newOtp[index] = value;
       setOtp(newOtp);
+      setError("");
 
       // Auto-focus next input
       if (value && index < 5) {
@@ -47,20 +51,33 @@ function VerifyOTPContent() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    // TODO: Verify OTP with backend
-    setTimeout(() => {
+    const otpCode = otp.join("");
+    if (otpCode.length !== 6) {
+      setError("Please enter the complete 6-digit OTP");
       setIsLoading(false);
-      const otpCode = otp.join("");
-      if (otpCode.length === 6) {
-        router.push("/onboarding/signup/profile");
-      }
-    }, 1000);
+      return;
+    }
+
+    try {
+      await loginWithOTP(phoneNumber, otpCode);
+      router.push("/signup/profile");
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
     setTimer(60);
-    // TODO: Resend OTP
+    setError("");
+    try {
+      await requestOTP(phoneNumber, "REGISTRATION");
+    } catch (err: any) {
+      setError(err.message || "Failed to resend OTP");
+    }
   };
 
   return (
@@ -99,6 +116,12 @@ function VerifyOTPContent() {
               <p className="font-medium text-gray-900">+251 {phoneNumber}</p>
             </div>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           {/* OTP Input */}
           <form onSubmit={handleVerify}>
