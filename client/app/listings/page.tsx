@@ -4,89 +4,118 @@ import { useState, useMemo, useEffect } from "react";
 import FilterPanel from "@/component/listings/FilterPanel";
 import ListingsGrid from "@/component/listings/ListingsGrid";
 import SearchBar from "@/component/listings/SearchBar";
-import { sampleListings, Listing } from "@/data/sampleListings";
+import { productApi } from "@/lib/api";
+
+interface Product {
+  id: string;
+  title: string;
+  category: string;
+  image?: string;
+  images?: string[];
+  price: number;
+  quantity: number;
+  minOrder?: number;
+  rating: number;
+  soldQuantity: number;
+  location: string;
+  farmer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    farmerProfile?: {
+      verificationStatus: string;
+      rating: number;
+    };
+  };
+  status: string;
+  syncStatus: string;
+  description?: string;
+  updatedAt?: string;
+}
 
 export default function ListingsPage() {
-  /* =======================
-     STATE
-  ======================= */
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [quantityRange, setQuantityRange] = useState<[number, number]>([0, 0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [selectedLocation, setSelectedLocation] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState<"newest" | "price-low" | "price-high" | "rating">("newest");
   const [mapViewEnabled, setMapViewEnabled] = useState(false);
+  const [listings, setListings] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  // State to hold all listings (sample + local storage)
-  const [allListings, setAllListings] = useState<Listing[]>(sampleListings);
-
-  // Load local storage listings on component mount
+  // Fetch products from backend
   useEffect(() => {
-    const localItems = JSON.parse(localStorage.getItem("local_listings") || "[]");
-    if (localItems.length > 0) {
-      setAllListings((prevListings: Listing[]) => {
-        // Correctly merge and deduplicate by ID
-        const combined = [...prevListings, ...localItems];
-        const unique = Array.from(new Map(combined.map((item: Listing) => [item.id, item])).values());
-        return unique;
-      });
-    }
-  }, []);
+    fetchProducts();
+  }, [selectedCrops, priceRange, quantityRange, searchQuery, selectedLocation, sortBy, page]);
 
-  // Memoized filtering and scoring logic
-  const filteredListings = useMemo(() => {
-    // 1. First, apply hard filters
-    let result = allListings.filter((item: Listing) => {
-      // Search filter (title, farmer, location)
-      const matchesSearch = !searchQuery ||
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.farmer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.location.toLowerCase().includes(searchQuery.toLowerCase());
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const params: any = {
+        page,
+        limit: 20,
+        sortBy,
+      };
 
-      // Crop category filter
-      const matchesCrop = selectedCrops.length === 0 ||
-        selectedCrops.includes(item.category) ||
-        (selectedCrops.includes("Other") && !item.category);
-
-      // Location filter
-      const matchesLocation = !selectedLocation || item.location === selectedLocation;
-
-      // Price filter
-      const matchesPrice = item.price <= priceRange[1];
-
-      // Quantity filter
-      const matchesQuantity = item.quantity >= quantityRange[1];
-
-      return matchesSearch && matchesCrop && matchesLocation && matchesPrice && matchesQuantity;
-    });
-
-    // 2. Apply Sorting & Relevance Scoring
-    return result.sort((a: Listing, b: Listing) => {
-      if (sortBy === 'newest') {
-        if (searchQuery) {
-          const getScore = (item: typeof a) => {
-            let score = 0;
-            const searchLower = searchQuery.toLowerCase();
-            if (item.title.toLowerCase().includes(searchLower)) score += 10;
-            if (item.category.toLowerCase().includes(searchLower)) score += 5;
-            if (item.farmer.toLowerCase().includes(searchLower)) score += 2;
-            return score;
-          };
-          const scoreA = getScore(a);
-          const scoreB = getScore(b);
-          if (scoreA !== scoreB) return scoreB - scoreA;
-        }
-        return b.id - a.id;
+      if (selectedCrops.length > 0) {
+        params.category = selectedCrops[0]; // Backend supports single category for now
+      }
+      if (selectedLocation) {
+        params.location = selectedLocation;
+      }
+      if (priceRange[1] < 1000) {
+        params.maxPrice = priceRange[1];
+      }
+      if (priceRange[0] > 0) {
+        params.minPrice = priceRange[0];
+      }
+      if (quantityRange[1] > 0) {
+        params.minQuantity = quantityRange[1];
+      }
+      if (searchQuery) {
+        params.search = searchQuery;
       }
 
-      if (sortBy === 'price-low') return a.price - b.price;
-      if (sortBy === 'price-high') return b.price - a.price;
+      const response = await productApi.getProducts(params);
+      
+      if (response.success && response.data) {
+        const products = response.data.map((product: any) => ({
+          ...product,
+          farmer: product.farmer?.firstName + " " + product.farmer?.lastName || "Unknown",
+          image: product.images?.[0] || product.image || "/potatoes.png",
+        }));
+        setListings(products);
+        setTotal(response.pagination?.total || 0);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load products");
+      console.error("Error fetching products:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      return 0;
-    });
-  }, [allListings, searchQuery, selectedCrops, priceRange, quantityRange, sortBy, selectedLocation]);
+  // Memoized filtering (client-side for additional filtering if needed)
+  const filteredListings = useMemo(() => {
+    let result = listings;
+
+    // Additional client-side filtering if needed
+    if (selectedCrops.length > 0) {
+      result = result.filter((item) => 
+        selectedCrops.includes(item.category) ||
+        (selectedCrops.includes("Other") && !item.category)
+      );
+    }
+
+    return result;
+  }, [listings, selectedCrops]);
 
   const handleCropToggle = (crop: string) => {
     setSelectedCrops((prev) =>
@@ -94,6 +123,7 @@ export default function ListingsPage() {
         ? prev.filter((c) => c !== crop)
         : [...prev, crop]
     );
+    setPage(1); // Reset to first page on filter change
   };
 
   const handleClearFilters = () => {
@@ -104,21 +134,30 @@ export default function ListingsPage() {
     setSelectedLanguage("English");
     setSortBy("newest");
     setMapViewEnabled(false);
+    setPage(1);
   };
 
-  /* =======================
-     UI
-  ======================= */
   return (
     <section className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-[1440px] px-6 py-10">
-
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Listings & Search</h1>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
         {/* Search Bar Container */}
         <div className="mb-8">
-          <SearchBar onSearch={setSearchQuery} showSellButton={false} />
+          <SearchBar 
+            onSearch={(query) => {
+              setSearchQuery(query);
+              setPage(1);
+            }} 
+            showSellButton={false} 
+          />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10">
@@ -134,9 +173,15 @@ export default function ListingsPage() {
               selectedLanguage={selectedLanguage}
               onLanguageChange={setSelectedLanguage}
               selectedLocation={selectedLocation}
-              onLocationChange={setSelectedLocation}
+              onLocationChange={(loc) => {
+                setSelectedLocation(loc);
+                setPage(1);
+              }}
               sortBy={sortBy}
-              onSortChange={setSortBy}
+              onSortChange={(sort) => {
+                setSortBy(sort as any);
+                setPage(1);
+              }}
               mapViewEnabled={mapViewEnabled}
               onMapViewToggle={() => setMapViewEnabled(!mapViewEnabled)}
               onClearFilters={handleClearFilters}
@@ -145,10 +190,18 @@ export default function ListingsPage() {
 
           {/* Main Listings Grid */}
           <main className="flex-1">
-            <ListingsGrid listings={filteredListings} totalCount={filteredListings.length} />
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-600 border-t-transparent"></div>
+              </div>
+            ) : (
+              <ListingsGrid 
+                listings={filteredListings as any} 
+                totalCount={total} 
+              />
+            )}
           </main>
         </div>
-
       </div>
     </section>
   );

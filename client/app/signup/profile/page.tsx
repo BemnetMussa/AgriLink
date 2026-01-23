@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, User, MapPin, CheckCircle, Globe } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { userApi } from "@/lib/api";
 
 export default function ProfileSetupPage() {
   const [userType, setUserType] = useState<"farmer" | "buyer" | null>(null);
@@ -14,7 +16,10 @@ export default function ProfileSetupPage() {
     primaryCrops: [] as string[],
   });
   const [language, setLanguage] = useState("english");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
+  const { user, refreshUser } = useAuth();
 
   const crops = ["Teff", "Wheat", "Barley", "Maize", "Coffee", "Vegetables"];
 
@@ -29,18 +34,65 @@ export default function ProfileSetupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (!userType || !formData.fullName) {
-      alert("Please select account type and enter your full name");
+      setError("Please select account type and enter your full name");
       return;
     }
 
-    // TODO: Submit profile data to backend
-    console.log({ userType, ...formData });
-    
-    // Redirect to dashboard based on user type
-    setTimeout(() => {
-      router.push(`/dashboard/${userType}`);
-    }, 1000);
+    if (!user) {
+      setError("You must be logged in to complete your profile");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Split full name into first and last
+      const nameParts = formData.fullName.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Update user profile
+      await userApi.updateProfile({
+        firstName,
+        lastName,
+        language,
+      });
+
+      // Update role-specific profile
+      if (userType === "farmer") {
+        const farmLocation = [formData.zone, formData.woreda, formData.kebele]
+          .filter(Boolean)
+          .join(", ");
+
+        await userApi.updateFarmerProfile({
+          farmName: `${firstName}'s Farm`,
+          farmLocation: farmLocation || undefined,
+        });
+      } else if (userType === "buyer") {
+        const address = [formData.zone, formData.woreda, formData.kebele]
+          .filter(Boolean)
+          .join(", ");
+
+        await userApi.updateBuyerProfile({
+          businessName: `${firstName}'s Business`,
+          address: address || undefined,
+        });
+      }
+
+      // Refresh user data
+      await refreshUser();
+
+      // Redirect to listings
+      router.push("/listings");
+    } catch (err: any) {
+      setError(err.message || "Failed to complete profile setup");
+      console.error("Error setting up profile:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -78,6 +130,12 @@ export default function ProfileSetupPage() {
             Tell us more about yourself to get started
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
         {/* User Type Selection */}
         <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
@@ -129,7 +187,7 @@ export default function ProfileSetupPage() {
           <div className="mb-4">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
               <User size={16} />
-              Full Name
+              Full Name *
             </label>
             <input
               type="text"
@@ -211,20 +269,22 @@ export default function ProfileSetupPage() {
           )}
 
           {/* Verification Badge */}
-          <div className="mb-6 p-3 bg-green-50 rounded-lg flex items-center gap-3">
-            <CheckCircle size={20} className="text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-green-700">Verified Farmer</p>
-              <p className="text-xs text-green-600">Your identity has been verified</p>
+          {userType === "farmer" && (
+            <div className="mb-6 p-3 bg-green-50 rounded-lg flex items-center gap-3">
+              <CheckCircle size={20} className="text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-green-700">Farmer Verification</p>
+                <p className="text-xs text-green-600">Submit documents to get verified</p>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
-            disabled={!userType || !formData.fullName}
+            disabled={!userType || !formData.fullName || isSubmitting}
             className="w-full py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Complete Registration
+            {isSubmitting ? "Completing..." : "Complete Registration"}
           </button>
         </form>
       </div>

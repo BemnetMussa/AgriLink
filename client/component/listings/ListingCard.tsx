@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { Phone, CheckCircle, Clock, Wifi, WifiOff, MapPin } from 'lucide-react';
 
 type ListingCardProps = {
-  id: number;
+  id: string | number;
   title: string;
   price: number;
   quantity: number;
   location: string;
   farmer: string;
-  status: 'online' | 'offline';
-  syncStatus: 'synced' | 'pending' | 'online-only';
+  status?: 'online' | 'offline' | string;
+  syncStatus?: 'synced' | 'pending' | 'online-only' | string;
   image: string;
   rating: number;
   soldQuantity: number;

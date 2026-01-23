@@ -16,19 +16,31 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { productApi, api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CreateListingPage() {
     const router = useRouter();
+    const { isAuthenticated, user } = useAuth();
+
+    // Redirect if not authenticated
+    useEffect(() => {
+        if (!isAuthenticated) {
+            router.push("/login");
+        }
+    }, [isAuthenticated, router]);
 
     // State for form fields
     const [cropType, setCropType] = useState("");
     const [quantity, setQuantity] = useState("");
-    const [unit, setUnit] = useState("Kilograms (Kg)");
+    const [unit, setUnit] = useState("kg");
     const [price, setPrice] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("Addis Ababa, Ethiopia");
     const [isOffline, setIsOffline] = useState(false);
-    const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: 9.03, lng: 38.74 }); // Default Addis
+    const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: 9.03, lng: 38.74 });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState("");
 
     const [isLocating, setIsLocating] = useState(false);
     const [locationModalState, setLocationModalState] = useState<'request' | 'locating' | 'error' | null>(null);
@@ -58,11 +70,8 @@ export default function CreateListingPage() {
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
 
-    // Mock photos
-    const [photos, setPhotos] = useState([
-        { id: 1, url: "/potatoes.png" },
-        { id: 2, url: "/tomatoes.png" }
-    ]);
+    // Photos state - store as base64 or URLs
+    const [photos, setPhotos] = useState<Array<{ id: number; url: string }>>([]);
 
     const removePhoto = (id: number) => {
         setPhotos(photos.filter(p => p.id !== id));
@@ -115,11 +124,17 @@ export default function CreateListingPage() {
         }
     };
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const url = URL.createObjectURL(file);
-            setPhotos([...photos, { id: Date.now(), url }]);
+            try {
+                // Convert to base64 for now (in production, upload to S3)
+                const base64 = await api.uploadFile(file);
+                setPhotos([...photos, { id: Date.now(), url: base64 }]);
+            } catch (err) {
+                console.error("Error uploading file:", err);
+                alert("Failed to upload image");
+            }
         }
     };
 
@@ -160,7 +175,6 @@ export default function CreateListingPage() {
             const errCode = error.code;
             const errMsg = error.message;
 
-            // If timeout or position unavailable on high accuracy, try once more with low accuracy
             if ((errCode === 3 || errCode === 2) && options.enableHighAccuracy) {
                 console.warn("High accuracy geolocation timed out/failed, falling back to network...");
                 navigator.geolocation.getCurrentPosition(successCallback, (fallbackError) => {
@@ -181,41 +195,79 @@ export default function CreateListingPage() {
         navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
 
-        // Create new listing object
-        const newListing = {
-            id: Date.now(),
-            title: cropType || "Fresh Produce",
-            category: cropType || "Other", // Match filtering field
-            price: Number(price) || 0,
-            quantity: Number(quantity) || 0,
-            location: location,
-            farmer: "Abebe Bikila", // Mock current farmer
-            status: isOffline ? 'offline' : 'online',
-            syncStatus: isOffline ? 'pending' : 'synced',
-            image: photos[0]?.url || "/potatoes.png",
-            rating: 5.0,
-            soldQuantity: 0,
-            description: description,
-            createdAt: new Date().toISOString()
-        };
+        if (!cropType || !quantity || !price) {
+            setError("Please fill in all required fields");
+            return;
+        }
 
-        // Save to localStorage
-        const existingListings = JSON.parse(localStorage.getItem("local_listings") || "[]");
-        localStorage.setItem("local_listings", JSON.stringify([newListing, ...existingListings]));
+        setIsSubmitting(true);
 
-        // Alert user
-        alert(isOffline ? "Saved locally! It will sync when online." : "Listing posted successfully!");
+        try {
+            const imageUrls = photos.map(p => p.url);
 
-        router.push("/listings");
+            const productData = {
+                title: cropType || "Fresh Produce",
+                description: description || undefined,
+                category: cropType,
+                price: Number(price),
+                quantity: Number(quantity),
+                minOrder: Number(quantity) * 0.1, // 10% of total as min order
+                unit: unit === "Kilograms (Kg)" ? "kg" : unit.toLowerCase(),
+                images: imageUrls.length > 0 ? imageUrls : undefined,
+                location: location,
+                latitude: coords.lat,
+                longitude: coords.lng,
+            };
+
+            if (isOffline) {
+                // Save to localStorage for offline sync
+                const newListing = {
+                    id: Date.now(),
+                    ...productData,
+                    farmer: user?.firstName + " " + user?.lastName || "Unknown",
+                    status: 'offline',
+                    syncStatus: 'pending',
+                    image: imageUrls[0] || "/potatoes.png",
+                    rating: 0,
+                    soldQuantity: 0,
+                    createdAt: new Date().toISOString()
+                };
+
+                const existingListings = JSON.parse(localStorage.getItem("local_listings") || "[]");
+                localStorage.setItem("local_listings", JSON.stringify([newListing, ...existingListings]));
+
+                alert("Saved locally! It will sync when online.");
+                router.push("/listings");
+            } else {
+                // Submit to backend
+                const response = await productApi.createProduct(productData);
+                
+                if (response.success) {
+                    alert("Listing posted successfully!");
+                    router.push("/listings");
+                } else {
+                    throw new Error(response.message || "Failed to create listing");
+                }
+            }
+        } catch (err: any) {
+            setError(err.message || "Failed to create listing. Please try again.");
+            console.error("Error creating listing:", err);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
+
+    if (!isAuthenticated) {
+        return null; // Will redirect
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             <div className="mx-auto max-w-4xl px-4 py-8">
-
                 {/* Header & Back Navigation */}
                 <div className="mb-8 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -241,20 +293,27 @@ export default function CreateListingPage() {
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-
-                    {/* Section 1: Offline Submission Status */}
-                    <div className="rounded-2xl border border-green-100 bg-green-50/50 p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="rounded-full bg-green-100 p-2 text-green-700">
-                                <CheckCircle2 className="h-5 w-5" />
-                            </div>
-                            <h3 className="text-lg font-bold text-green-800">Offline Submission Status</h3>
-                        </div>
-                        <p className="mt-3 text-sm text-green-700 font-medium">
-                            Your listing is saved locally. 3 items in submission queue, they will sync automatically when you are online.
-                        </p>
+                {error && (
+                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-600">{error}</p>
                     </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* Section 1: Offline Submission Status */}
+                    {isOffline && (
+                        <div className="rounded-2xl border border-green-100 bg-green-50/50 p-6">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-full bg-green-100 p-2 text-green-700">
+                                    <CheckCircle2 className="h-5 w-5" />
+                                </div>
+                                <h3 className="text-lg font-bold text-green-800">Offline Submission Status</h3>
+                            </div>
+                            <p className="mt-3 text-sm text-green-700 font-medium">
+                                Your listing will be saved locally and synced when you are online.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Section 2: Product Details */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -264,30 +323,39 @@ export default function CreateListingPage() {
                         <div className="mt-8 space-y-6">
                             {/* Crop Type */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700">Crop Type</label>
+                                <label className="block text-sm font-bold text-gray-700">Crop Type *</label>
                                 <select
                                     className="mt-2 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-gray-900 focus:border-green-500 focus:ring-green-500 transition shadow-sm appearance-none"
                                     value={cropType}
                                     onChange={(e) => setCropType(e.target.value)}
+                                    required
                                 >
                                     <option value="">Select a crop</option>
                                     <option value="Tomatoes">Tomatoes</option>
                                     <option value="Coffee Beans">Coffee Beans</option>
                                     <option value="Potatoes">Potatoes</option>
                                     <option value="Teff Grain">Teff Grain</option>
+                                    <option value="Wheat Grain">Wheat Grain</option>
+                                    <option value="Barley Grain">Barley Grain</option>
+                                    <option value="Onions">Onions</option>
+                                    <option value="Cabbage">Cabbage</option>
+                                    <option value="Carrots">Carrots</option>
+                                    <option value="Bananas">Bananas</option>
                                 </select>
                             </div>
 
                             {/* Quantity */}
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-bold text-gray-700">Quantity</label>
+                                    <label className="block text-sm font-bold text-gray-700">Quantity *</label>
                                     <input
                                         type="number"
                                         placeholder="e.g., 500"
                                         className="mt-2 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-gray-900 focus:border-green-500 focus:ring-green-500 transition shadow-sm"
                                         value={quantity}
                                         onChange={(e) => setQuantity(e.target.value)}
+                                        required
+                                        min="1"
                                     />
                                 </div>
                                 <div className="w-full sm:w-48">
@@ -297,22 +365,24 @@ export default function CreateListingPage() {
                                         value={unit}
                                         onChange={(e) => setUnit(e.target.value)}
                                     >
-                                        <option>Kilograms (Kg)</option>
-                                        <option>Quintals</option>
-                                        <option>Boxes</option>
+                                        <option value="kg">Kilograms (Kg)</option>
+                                        <option value="quintal">Quintals</option>
+                                        <option value="box">Boxes</option>
                                     </select>
                                 </div>
                             </div>
 
                             {/* Price */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700">Price per unit (ETB)</label>
+                                <label className="block text-sm font-bold text-gray-700">Price per unit (ETB) *</label>
                                 <input
                                     type="number"
                                     placeholder="e.g., 2500"
                                     className="mt-2 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-gray-900 focus:border-green-500 focus:ring-green-500 transition shadow-sm"
                                     value={price}
                                     onChange={(e) => setPrice(e.target.value)}
+                                    required
+                                    min="1"
                                 />
                             </div>
 
@@ -378,18 +448,6 @@ export default function CreateListingPage() {
                                 <Upload className="h-6 w-6 text-gray-400 group-hover:text-green-600" />
                                 <span className="mt-2 text-xs font-bold text-gray-900">Upload Photo</span>
                             </button>
-
-                            {/* Add Another Placeholder */}
-                            <button
-                                type="button"
-                                onClick={triggerUpload}
-                                className="flex aspect-square flex-col items-center justify-center rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-100 transition group"
-                            >
-                                <div className="rounded-lg bg-white p-2 shadow-sm border border-gray-200">
-                                    <Plus className="h-4 w-4 text-gray-400 group-hover:text-green-600" />
-                                </div>
-                                <span className="mt-2 text-[10px] font-bold text-gray-500">Add another photo</span>
-                            </button>
                         </div>
                     </div>
 
@@ -400,7 +458,7 @@ export default function CreateListingPage() {
 
                         <div className="mt-8 space-y-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700">Location</label>
+                                <label className="block text-sm font-bold text-gray-700">Location *</label>
                                 <div className="relative mt-2">
                                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                         <MapPin className="h-5 w-5 text-gray-400" />
@@ -410,6 +468,7 @@ export default function CreateListingPage() {
                                         className="w-full rounded-xl border border-gray-300 bg-gray-50 py-3.5 pl-12 pr-4 text-gray-900 focus:border-green-500 focus:ring-green-500 transition shadow-sm"
                                         value={location}
                                         onChange={(e) => setLocation(e.target.value)}
+                                        required
                                     />
                                 </div>
                                 <button
@@ -438,27 +497,23 @@ export default function CreateListingPage() {
                         </div>
                     </div>
 
-
-
                     {/* Submit Action */}
                     <div className="pt-4">
                         <button
                             type="submit"
-                            className="w-full rounded-2xl bg-green-600 py-4.5 text-lg font-bold text-white shadow-lg shadow-green-100 hover:bg-green-700 hover:-translate-y-0.5 transition active:translate-y-0"
+                            disabled={isSubmitting}
+                            className="w-full rounded-2xl bg-green-600 py-4.5 text-lg font-bold text-white shadow-lg shadow-green-100 hover:bg-green-700 hover:-translate-y-0.5 transition active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit Listing
+                            {isSubmitting ? "Submitting..." : "Submit Listing"}
                         </button>
                     </div>
-
                 </form>
             </div>
 
-            {/* Camera Modal */}
+            {/* Camera Modal - Keep existing camera modal code */}
             {isCameraOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm">
                     <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-gray-900 shadow-2xl">
-
-                        {/* Header */}
                         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-6 bg-gradient-to-b from-black/60 to-transparent">
                             <h3 className="text-lg font-bold text-white">
                                 {capturedImage ? "Review Photo" : "Capture Produce"}
@@ -470,8 +525,6 @@ export default function CreateListingPage() {
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
-
-                        {/* Viewport */}
                         <div className="relative aspect-[3/4] w-full bg-black flex items-center justify-center">
                             {!capturedImage ? (
                                 <video
@@ -485,8 +538,6 @@ export default function CreateListingPage() {
                             )}
                             <canvas ref={canvasRef} className="hidden" />
                         </div>
-
-                        {/* Controls */}
                         <div className="p-8">
                             {!capturedImage ? (
                                 <div className="flex justify-center">
@@ -521,19 +572,16 @@ export default function CreateListingPage() {
                 </div>
             )}
 
-            {/* Location Permission & Troubleshooting Modal */}
+            {/* Location Permission Modal - Keep existing location modal code */}
             {locationModalState && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
                     <div className="relative w-full max-w-md overflow-hidden rounded-[32px] bg-white shadow-2xl">
-
-                        {/* Close Button */}
                         <button
                             onClick={() => setLocationModalState(null)}
                             className="absolute top-6 right-6 z-10 rounded-full bg-gray-100 p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition"
                         >
                             <X className="h-5 w-5" />
                         </button>
-
                         <div className="p-8 pt-12 text-center">
                             {locationModalState === 'request' && (
                                 <>
@@ -541,7 +589,6 @@ export default function CreateListingPage() {
                                         <MapPin className="h-10 w-10 text-green-600" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-gray-900">Device Location Required</h3>
-
                                     <div className="mt-6 text-left space-y-4 rounded-3xl bg-gray-50 p-6 border border-gray-100">
                                         <div className="flex gap-4">
                                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-bold text-sm shadow-sm">1</div>
@@ -556,7 +603,6 @@ export default function CreateListingPage() {
                                             <p className="text-gray-700 leading-tight text-blue-800">Once turned on, click the button below to automatically fill your address.</p>
                                         </div>
                                     </div>
-
                                     <div className="mt-8 space-y-3">
                                         <button
                                             onClick={startLocating}
@@ -573,7 +619,6 @@ export default function CreateListingPage() {
                                     </div>
                                 </>
                             )}
-
                             {locationModalState === 'locating' && (
                                 <>
                                     <div className="relative mx-auto mb-8 flex h-24 w-24 items-center justify-center">
@@ -593,14 +638,12 @@ export default function CreateListingPage() {
                                     </div>
                                 </>
                             )}
-
                             {locationModalState === 'error' && (
                                 <>
                                     <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-red-600">
                                         <MapPin className="h-10 w-10" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-gray-900">Location Missing</h3>
-
                                     <div className="mt-6 rounded-2xl bg-gray-50 p-5 text-left border border-gray-100">
                                         <p className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-2">
                                             <Info className="h-4 w-4 text-blue-500" />
@@ -628,7 +671,6 @@ export default function CreateListingPage() {
                                             )}
                                         </ul>
                                     </div>
-
                                     <div className="mt-8 flex flex-col gap-3">
                                         <button
                                             onClick={startLocating}
@@ -674,23 +716,5 @@ export default function CreateListingPage() {
                 </div>
             )}
         </div>
-    );
-}
-
-// Simple Plus icon component since lucide-react might not have Exactly what Visily showed in that specific spot
-function Plus({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
     );
 }
