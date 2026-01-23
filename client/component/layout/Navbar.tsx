@@ -1,22 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { User, Settings, LogOut, ChevronDown } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
+  const pathname = "/"; // Demo
+  const isAuthenticated = true; // Demo
+  const user = { firstName: "Abebe", lastName: "Kebede", email: "abebe@example.com", role: "FARMER" };
+  
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isHome = pathname === "/";
   const isListings = pathname === "/listings";
   const isSell = pathname === "/listings/create";
-  const isAdmin = pathname === "/admin";
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -36,82 +33,85 @@ export default function Navbar() {
   }, [showProfileMenu]);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/");
-      setShowProfileMenu(false);
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    console.log("Logout");
+    setShowProfileMenu(false);
   };
 
   const handleProfileClick = () => {
-    router.push("/profile");
+    console.log("Profile");
     setShowProfileMenu(false);
   };
 
   return (
-    <header className="w-full border-b bg-white px-4 sm:px-6 lg:px-8 shadow-sm relative z-50">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between py-4">
+    <header className="w-full border-b border-gray-200 bg-white sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12 py-4">
 
         {/* Left: Logo */}
-        <Link href="/" className="text-2xl font-bold text-green-600 tracking-tight flex items-center gap-2">
-          <span className="bg-green-600 text-white p-1 rounded-lg">Agri</span>Link
-        </Link>
+        <a href="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <span className="text-green-600">Agri</span>Link
+        </a>
 
         {/* Right: Navigation & Actions */}
-        <div className="flex items-center gap-8 text-sm ml-auto">
-          <div className="flex items-center gap-8 mr-4">
-            <Link
+        <div className="flex items-center gap-10">
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center gap-8">
+            <a
               href="/"
-              className={`font-medium transition pb-1 border-b-2 ${isHome ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
+              className={`text-sm font-semibold transition-colors ${
+                isHome 
+                  ? "text-green-600" 
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               Home
-            </Link>
-            <Link
+            </a>
+            <a
               href="/listings"
-              className={`font-medium transition pb-1 border-b-2 ${isListings ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
+              className={`text-sm font-semibold transition-colors ${
+                isListings 
+                  ? "text-green-600" 
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               Listings
-            </Link>
-            <Link
+            </a>
+            <a
               href="/listings/create"
-              className={`font-medium transition pb-1 border-b-2 ${isSell ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
+              className={`text-sm font-semibold transition-colors ${
+                isSell 
+                  ? "text-green-600" 
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               Sell Produce
-            </Link>
-            <Link
-              href="/admin"
-              className={`font-medium transition pb-1 border-b-2 ${isAdmin ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
-            >
-              Admin Dashboard
-            </Link>
+            </a>
           </div>
 
+          {/* Auth Section */}
           {isAuthenticated ? (
-            <div className="ml-2 pl-2 border-l border-gray-200 relative" ref={menuRef}>
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2 text-gray-700 hover:bg-gray-200 transition ring-2 ring-transparent hover:ring-green-100"
+                className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-3.5 py-2 text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200"
               >
-                <div className="flex items-center justify-center rounded-full bg-green-600 text-white w-7 h-7 text-xs font-semibold">
-                  {user?.firstName?.[0]?.toUpperCase() || user?.lastName?.[0]?.toUpperCase() || "U"}
+                <div className="flex items-center justify-center rounded-full bg-green-600 text-white w-8 h-8 text-sm font-semibold">
+                  {user?.firstName?.[0]?.toUpperCase() || "U"}
                 </div>
-                <span className="hidden sm:inline text-sm font-medium">
+                <span className="hidden sm:inline text-sm font-medium text-gray-900">
                   {user?.firstName || "User"}
                 </span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
               </button>
 
               {/* Profile Dropdown Menu */}
               {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-56 rounded-lg bg-white shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 mt-3 w-64 rounded-xl bg-white shadow-xl border border-gray-200 py-2 overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-semibold text-gray-900">
                       {user?.firstName} {user?.lastName}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{user?.email || user?.phoneNumber}</p>
-                    <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">
+                    <p className="text-xs text-gray-500 mt-1.5">{user?.email}</p>
+                    <span className="inline-block mt-2.5 px-2.5 py-1 text-xs font-semibold rounded-md bg-green-50 text-green-700 border border-green-200">
                       {user?.role || "USER"}
                     </span>
                   </div>
@@ -119,9 +119,9 @@ export default function Navbar() {
                   <div className="py-1">
                     <button
                       onClick={handleProfileClick}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      <Settings className="h-4 w-4" />
+                      <Settings className="h-4 w-4 text-gray-500" />
                       <span>Edit Profile</span>
                     </button>
                   </div>
@@ -129,7 +129,7 @@ export default function Navbar() {
                   <div className="border-t border-gray-100 py-1">
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Logout</span>
@@ -139,20 +139,20 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-4 ml-2">
-              <Link
+            <div className="flex items-center gap-3">
+              <a
                 href="/login"
-                className="text-gray-600 hover:text-green-600 transition font-medium"
+                className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors px-3 py-2"
               >
                 Login
-              </Link>
+              </a>
 
-              <Link
+              <a
                 href="/signup"
-                className="rounded-md bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 transition"
+                className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition-colors shadow-sm"
               >
                 Sign Up
-              </Link>
+              </a>
             </div>
           )}
         </div>
