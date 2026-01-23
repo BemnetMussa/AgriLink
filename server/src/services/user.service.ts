@@ -36,6 +36,7 @@ export class UserService {
       email?: string;
       language?: string;
       avatar?: string;
+      role?: UserRole; // Allow role update during profile setup
     }
   ): Promise<User> {
     const updateData: any = {};
@@ -59,6 +60,7 @@ export class UserService {
         data.language === 'amharic' ? 'AMHARIC' : data.language === 'oromo' ? 'OROMO' : 'ENGLISH';
     }
     if (data.avatar) updateData.avatar = data.avatar;
+    if (data.role) updateData.role = data.role; // Update role if provided
 
     return await prisma.user.update({
       where: { id: userId },
@@ -88,9 +90,19 @@ export class UserService {
     if (data.latitude !== undefined) updateData.latitude = data.latitude;
     if (data.longitude !== undefined) updateData.longitude = data.longitude;
 
-    return await prisma.farmerProfile.update({
+    // Create farmer profile if it doesn't exist yet (first-time setup), otherwise update
+    return await prisma.farmerProfile.upsert({
       where: { userId },
-      data: updateData,
+      update: updateData,
+      create: {
+        userId,
+        farmName: data.farmName,
+        farmLocation: data.farmLocation,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        // Required fields without defaults
+        verificationDocuments: [],
+      },
     });
   }
 
@@ -171,9 +183,16 @@ export class UserService {
     if (data.businessType) updateData.businessType = data.businessType;
     if (data.address) updateData.address = data.address;
 
-    return await prisma.buyerProfile.update({
+    // Create buyer profile if it doesn't exist yet (first-time setup), otherwise update
+    return await prisma.buyerProfile.upsert({
       where: { userId },
-      data: updateData,
+      update: updateData,
+      create: {
+        userId,
+        businessName: data.businessName,
+        businessType: data.businessType,
+        address: data.address,
+      },
     });
   }
 

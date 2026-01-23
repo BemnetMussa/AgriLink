@@ -282,6 +282,28 @@ export class AuthService {
     });
   }
 
+  // Set password for user who doesn't have one yet (after OTP registration)
+  async setPassword(userId: string, newPassword: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new AuthenticationError('User not found');
+    }
+
+    if (user.passwordHash) {
+      throw new ValidationError('Password already set. Please use change password.');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  }
+
   // Reset password
   async resetPassword(phoneNumber: string, otp: string, newPassword: string): Promise<void> {
     // Verify OTP

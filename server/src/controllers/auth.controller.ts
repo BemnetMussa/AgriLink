@@ -41,6 +41,10 @@ const changePasswordSchema = z.object({
   newPassword: passwordSchema,
 });
 
+const setPasswordSchema = z.object({
+  newPassword: passwordSchema,
+});
+
 const resetPasswordSchema = z.object({
   phoneNumber: phoneNumberSchema,
   otp: z.string().length(6, 'OTP must be 6 digits'),
@@ -127,6 +131,20 @@ export class AuthController {
       const data = changePasswordSchema.parse(req.body);
       await authService.changePassword(req.user.id, data.oldPassword, data.newPassword);
       return sendSuccess(res, null, 'Password changed successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Set password for OTP-registered users (no existing password)
+  async setPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      if (!req.user) {
+        throw new AuthenticationError('Authentication required');
+      }
+      const data = setPasswordSchema.parse(req.body);
+      await authService.setPassword(req.user.id, data.newPassword);
+      return sendSuccess(res, null, 'Password set successfully');
     } catch (error) {
       next(error);
     }
