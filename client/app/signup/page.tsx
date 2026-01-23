@@ -26,7 +26,11 @@ export default function SignupPage() {
     setIsLoading(true);
     
     try {
-      await requestOTP(phoneNumber, "REGISTRATION");
+      const otpCode = await requestOTP(phoneNumber, "REGISTRATION");
+      // In development, OTP is returned - store it for display
+      if (otpCode) {
+        sessionStorage.setItem('dev_otp', otpCode);
+      }
       router.push(`/signup/verify?phone=${encodeURIComponent(phoneNumber)}`);
     } catch (err: any) {
       setError(err.message || "Failed to send OTP. Please try again.");

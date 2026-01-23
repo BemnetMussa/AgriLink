@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi, userApi, api } from '@/lib/api';
+import Cookies from 'js-cookie';
 
 interface User {
   id: string;
@@ -21,7 +22,7 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   login: (phoneNumber: string, password: string) => Promise<void>;
-  loginWithOTP: (phoneNumber: string, code: string) => Promise<void>;
+  loginWithOTP: (phoneNumber: string, code: string, purpose?: string) => Promise<void>;
   register: (data: {
     phoneNumber: string;
     firstName: string;
@@ -43,8 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const token = localStorage.getItem('accessToken');
+    // Check if user is logged in on mount (check both cookie and localStorage)
+    const token = typeof window !== 'undefined' 
+      ? (Cookies.get('accessToken') || localStorage.getItem('accessToken'))
+      : null;
     if (token) {
       refreshUser().catch(() => {
         // If refresh fails, clear token
@@ -85,9 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginWithOTP = async (phoneNumber: string, code: string) => {
+  const loginWithOTP = async (phoneNumber: string, code: string, purpose: string = 'LOGIN') => {
     try {
-      const response = await authApi.verifyOTP(phoneNumber, code, 'LOGIN');
+      const response = await authApi.verifyOTP(phoneNumber, code, purpose);
       if (response.success && response.data) {
         const { user, accessToken, refreshToken } = response.data;
         api.setToken(accessToken);
@@ -95,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem('refreshToken', refreshToken);
         }
         setUser(user);
+      } else {
+        throw new Error('OTP verification failed');
       }
     } catch (error: any) {
       throw new Error(error.message || 'OTP verification failed');
@@ -148,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       api.setToken(null);
       localStorage.removeItem('refreshToken');
+      Cookies.remove('accessToken');
       setUser(null);
     }
   };
