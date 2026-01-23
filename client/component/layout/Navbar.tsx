@@ -16,6 +16,7 @@ export default function Navbar() {
   const isHome = pathname === "/";
   const isListings = pathname === "/listings";
   const isSell = pathname === "/listings/create";
+  const isAdmin = pathname === "/admin";
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -78,6 +79,12 @@ export default function Navbar() {
               className={`font-medium transition pb-1 border-b-2 ${isSell ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
             >
               Sell Produce
+            </Link>
+            <Link
+              href="/admin"
+              className={`font-medium transition pb-1 border-b-2 ${isAdmin ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
+            >
+              Admin Dashboard
             </Link>
           </div>
 
