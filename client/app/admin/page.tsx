@@ -80,6 +80,7 @@ const moderationQueue = [
     subject: "New: 'Avocado'",
     reporter: "System",
     date: "2023-11-20",
+    status: "Pending",
   },
   {
     id: "MOD-002",
@@ -87,6 +88,7 @@ const moderationQueue = [
     subject: "User: 'Buyer_23'",
     reporter: "Farmer Sara",
     date: "2023-11-19",
+    status: "In Review",
   },
   {
     id: "MOD-003",
@@ -94,6 +96,7 @@ const moderationQueue = [
     subject: "Update: 'Wheat'",
     reporter: "System",
     date: "2023-11-18",
+    status: "Pending",
   },
   {
     id: "MOD-004",
@@ -101,6 +104,7 @@ const moderationQueue = [
     subject: "Listing: 'Tomatoes'",
     reporter: "User Admin",
     date: "2023-11-17",
+    status: "Resolved",
   },
   {
     id: "MOD-005",
@@ -108,6 +112,7 @@ const moderationQueue = [
     subject: "New: 'Onions'",
     reporter: "System",
     date: "2023-11-16",
+    status: "Pending",
   },
 ];
 
@@ -118,6 +123,7 @@ const users = [
     email: "abebe@example.com",
     status: "Active",
     lastLogin: "2023-11-20 14:30",
+    role: "Farmer",
   },
   {
     id: "USR-002",
@@ -125,6 +131,7 @@ const users = [
     email: "sara@example.com",
     status: "Active",
     lastLogin: "2023-11-19 09:15",
+    role: "Buyer",
   },
   {
     id: "USR-003",
@@ -132,6 +139,7 @@ const users = [
     email: "john@traders.com",
     status: "Suspended",
     lastLogin: "2023-11-18 11:00",
+    role: "Buyer",
   },
   {
     id: "USR-004",
@@ -139,6 +147,7 @@ const users = [
     email: "almaz@tech.net",
     status: "Active",
     lastLogin: "2023-11-20 10:00",
+    role: "Admin",
   },
   {
     id: "USR-005",
@@ -146,32 +155,43 @@ const users = [
     email: "tilahun@farm.org",
     status: "Pending",
     lastLogin: "2023-11-15 16:45",
+    role: "Farmer",
   },
 ];
 
 export default function AdminDashboardPage() {
   const [moderationSearch, setModerationSearch] = useState("");
+  const [moderationType, setModerationType] = useState("All");
+  const [moderationStatus, setModerationStatus] = useState("All");
   const [userSearch, setUserSearch] = useState("");
+  const [userRole, setUserRole] = useState("All");
+  const [userStatus, setUserStatus] = useState("All");
 
   const filteredModeration = useMemo(() => {
     if (!moderationSearch) return moderationQueue;
     const query = moderationSearch.toLowerCase();
-    return moderationQueue.filter((item) =>
-      [item.id, item.type, item.subject, item.reporter].some((value) =>
-        value.toLowerCase().includes(query)
+    return moderationQueue
+      .filter((item) =>
+        [item.id, item.type, item.subject, item.reporter, item.status].some((value) =>
+          value.toLowerCase().includes(query)
+        )
       )
-    );
-  }, [moderationSearch]);
+      .filter((item) => (moderationType === "All" ? true : item.type === moderationType))
+      .filter((item) => (moderationStatus === "All" ? true : item.status === moderationStatus));
+  }, [moderationSearch, moderationType, moderationStatus]);
 
   const filteredUsers = useMemo(() => {
     if (!userSearch) return users;
     const query = userSearch.toLowerCase();
-    return users.filter((user) =>
-      [user.id, user.name, user.email, user.status].some((value) =>
-        value.toLowerCase().includes(query)
+    return users
+      .filter((user) =>
+        [user.id, user.name, user.email, user.status, user.role].some((value) =>
+          value.toLowerCase().includes(query)
+        )
       )
-    );
-  }, [userSearch]);
+      .filter((user) => (userRole === "All" ? true : user.role === userRole))
+      .filter((user) => (userStatus === "All" ? true : user.status === userStatus));
+  }, [userSearch, userRole, userStatus]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -300,14 +320,32 @@ export default function AdminDashboardPage() {
                   className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 focus:border-green-500 focus:outline-none"
                 />
               </div>
-              <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600">
-                <SlidersHorizontal className="h-3 w-3" />
-                Filter Type
-              </button>
-              <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600">
-                <ShieldAlert className="h-3 w-3" />
-                Filter Status
-              </button>
+              <div className="relative">
+                <SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={moderationType}
+                  onChange={(event) => setModerationType(event.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-xs font-medium text-gray-600 focus:border-green-500 focus:outline-none"
+                >
+                  <option value="All">All Types</option>
+                  <option value="Listing">Listing</option>
+                  <option value="User Report">User Report</option>
+                  <option value="Comment">Comment</option>
+                </select>
+              </div>
+              <div className="relative">
+                <ShieldAlert className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={moderationStatus}
+                  onChange={(event) => setModerationStatus(event.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-xs font-medium text-gray-600 focus:border-green-500 focus:outline-none"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="In Review">In Review</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-gray-100">
@@ -362,7 +400,7 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </div>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
@@ -372,14 +410,32 @@ export default function AdminDashboardPage() {
                 className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 focus:border-green-500 focus:outline-none"
               />
             </div>
-            <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600">
-              <UserRound className="h-3 w-3" />
-              Filter Role
-            </button>
-            <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600">
-              <ShieldAlert className="h-3 w-3" />
-              Filter Status
-            </button>
+              <div className="relative">
+                <UserRound className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={userRole}
+                  onChange={(event) => setUserRole(event.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-xs font-medium text-gray-600 focus:border-green-500 focus:outline-none"
+                >
+                  <option value="All">All Roles</option>
+                  <option value="Farmer">Farmer</option>
+                  <option value="Buyer">Buyer</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+              <div className="relative">
+                <ShieldAlert className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={userStatus}
+                  onChange={(event) => setUserStatus(event.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white py-2 pl-8 pr-3 text-xs font-medium text-gray-600 focus:border-green-500 focus:outline-none"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Suspended">Suspended</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-gray-100">
