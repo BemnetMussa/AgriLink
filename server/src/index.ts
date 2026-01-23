@@ -9,15 +9,7 @@ import prisma from './config/database';
 
 
 
-// #######################
 
-
-
-
-
-
-
-// #######################
 
 
 // Create Express app
