@@ -4,7 +4,6 @@ import { use, useState, useEffect } from "react";
 import {
     MapPin,
     MessageSquare,
-    CreditCard,
     CheckCircle,
     Globe,
     Accessibility,
@@ -241,25 +240,19 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                         {/* Actions Card */}
                         <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                             {isAuthenticated ? (
-                                <>
-                                    <button 
-                                        onClick={() => setShowContactModal(true)}
-                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-100"
-                                    >
-                                        <MessageSquare className="h-5 w-5" />
-                                        Chat / Make Offer
-                                    </button>
-                                    <button className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-green-600 py-3 font-bold text-green-600 hover:bg-green-50 transition">
-                                        <CreditCard className="h-5 w-5" />
-                                        Escrow Payment (Telebirr)
-                                    </button>
-                                </>
+                                <button 
+                                    onClick={() => setShowContactModal(true)}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-100"
+                                >
+                                    <MessageSquare className="h-5 w-5" />
+                                    Contact Farmer
+                                </button>
                             ) : (
                                 <Link
                                     href="/login"
                                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3.5 font-bold text-white hover:bg-green-700 transition shadow-lg shadow-green-100"
                                 >
-                                    Login to Order
+                                    Login to Contact
                                 </Link>
                             )}
                         </div>

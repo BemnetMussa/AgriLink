@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "@/component/layout/Navbar";
 import Footer from "@/component/layout/Footer";
 import { Providers } from "@/components/Providers";
+import ServerStatus from "@/components/ServerStatus";
 
 export default function RootLayout({
   children,
@@ -15,6 +16,7 @@ export default function RootLayout({
           <Navbar />
           <main className="flex-grow">{children}</main>
           <Footer />
+          <ServerStatus />
         </Providers>
       </body>
     </html>

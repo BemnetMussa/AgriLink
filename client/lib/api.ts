@@ -19,6 +19,9 @@ export interface ApiResponse<T = any> {
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
+  private serverOnline: boolean | null = null;
+  private lastServerCheck: number = 0;
+  private readonly SERVER_CHECK_INTERVAL = 10000; // Check every 10 seconds
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -29,6 +32,35 @@ class ApiClient {
       if (this.token && !localStorage.getItem('accessToken')) {
         localStorage.setItem('accessToken', this.token);
       }
+      // Check server status on initialization
+      this.checkServerStatus();
+    }
+  }
+
+  private async checkServerStatus(): Promise<boolean> {
+    const now = Date.now();
+    // Only check if enough time has passed since last check
+    if (this.serverOnline !== null && (now - this.lastServerCheck) < this.SERVER_CHECK_INTERVAL) {
+      return this.serverOnline;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
+      const response = await fetch(`${this.baseURL.replace('/api/v1', '')}/api/v1/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      
+      this.serverOnline = response.ok;
+      this.lastServerCheck = now;
+      return this.serverOnline;
+    } catch (error) {
+      this.serverOnline = false;
+      this.lastServerCheck = now;
+      return false;
     }
   }
 
@@ -65,11 +97,67 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    // Quick server check before making the request (non-blocking)
+    const serverStatus = await this.checkServerStatus();
+    if (!serverStatus && typeof window !== 'undefined') {
+      // Server is known to be offline - throw immediately with friendly message
+      throw new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+    }
+
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+      // Add timeout and better error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          ...options,
+          headers,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        
+        // If request succeeds, mark server as online
+        if (response.ok) {
+          this.serverOnline = true;
+          this.lastServerCheck = Date.now();
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        // Mark server as offline
+        this.serverOnline = false;
+        this.lastServerCheck = Date.now();
+        
+        // Catch network errors immediately - this happens when backend is not running
+        const errorName = fetchError?.name || '';
+        const errorMessage = fetchError?.message || '';
+        const errorStr = String(errorMessage).toLowerCase();
+        
+        if (errorName === 'AbortError') {
+          throw new Error('Request timeout. The server is taking too long to respond. Please check if the backend server is running.');
+        }
+        
+        // Check for all possible network error patterns
+        // IMPORTANT: Browser console will ALWAYS show "Failed to fetch" - this is normal browser behavior
+        // We cannot suppress it, but we catch it here and provide a user-friendly error message
+        if (errorName === 'TypeError' || 
+            errorMessage === 'Failed to fetch' ||
+            errorStr.includes('failed to fetch') ||
+            errorStr.includes('networkerror') ||
+            errorStr.includes('network error') ||
+            errorStr.includes('err_connection_refused') ||
+            errorStr.includes('err_name_not_resolved') ||
+            errorStr.includes('load failed') ||
+            errorStr.includes('network request failed') ||
+            errorStr.includes('fetch')) {
+          // Create a user-friendly error message
+          // The console error is expected - browsers always log network failures
+          const friendlyError = new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+          throw friendlyError;
+        }
+        throw fetchError;
+      }
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
@@ -115,9 +203,22 @@ class ApiClient {
 
       return data;
     } catch (error: any) {
-      // Handle network errors
-      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-        throw new Error('Network error. Please check your connection and ensure the backend server is running.');
+      // Handle network errors - backend server not running
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout. The server is taking too long to respond. Please check if the backend server is running.');
+      }
+      
+      if (error.message === 'Failed to fetch' || 
+          error.name === 'TypeError' || 
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError') ||
+          (error.message && typeof error.message === 'string' && error.message.toLowerCase().includes('failed to fetch'))) {
+        const friendlyError = new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+        // Don't log to console in production, but keep it for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Backend server connection failed. Make sure the server is running on http://localhost:5000');
+        }
+        throw friendlyError;
       }
       
       // Extract clean error message using utility function
@@ -264,33 +365,7 @@ export const productApi = {
   getLocations: () => api.get('/products/locations'),
 };
 
-// Order API
-export const orderApi = {
-  createOrder: (data: {
-    items: Array<{ productId: string; quantity: number }>;
-    deliveryAddress: string;
-    deliveryLat?: number;
-    deliveryLng?: number;
-    deliveryDate?: string;
-    notes?: string;
-    negotiatedPrice?: number;
-  }) => api.post('/orders', data),
-
-  getOrders: (params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    role?: 'buyer' | 'farmer';
-  }) => api.get('/orders', params),
-
-  getOrderById: (id: string) => api.get(`/orders/${id}`),
-
-  updateOrderStatus: (id: string, status: string) =>
-    api.patch(`/orders/${id}/status`, { status }),
-
-  negotiatePrice: (id: string, newPrice: number) =>
-    api.post(`/orders/${id}/negotiate`, { newPrice }),
-};
+// Order API - REMOVED: Order functionality has been permanently removed
 
 // Payment API
 export const paymentApi = {
