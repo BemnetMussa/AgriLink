@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { productApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -49,7 +50,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                 setActiveImage(product.images?.[0] || product.image || "/potatoes.png");
             }
         } catch (err: any) {
-            setError(err.message || "Failed to load product");
+            setError(extractErrorMessage(err) || "Failed to load product");
             console.error("Error fetching product:", err);
         } finally {
             setIsLoading(false);

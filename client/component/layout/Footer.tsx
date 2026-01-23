@@ -78,16 +78,8 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t py-6 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Agrilink Ethiopia. All rights reserved.
+        © 2026 Agrilink Ethiopia. All rights reserved.
       </div>
     </footer>
   );
-
-  return (
-    <footer>
-      {/* content */}
-    </footer>
-  );
-
 }
-

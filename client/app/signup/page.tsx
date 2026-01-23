@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Globe, Wifi, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export default function SignupPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -33,7 +34,7 @@ export default function SignupPage() {
       }
       router.push(`/signup/verify?phone=${encodeURIComponent(phoneNumber)}`);
     } catch (err: any) {
-      setError(err.message || "Failed to send OTP. Please try again.");
+      setError(extractErrorMessage(err) || "Failed to send OTP. Please try again.");
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -41,7 +42,7 @@ export default function LoginPage() {
       }
       router.push("/listings");
     } catch (err: any) {
-      setError(err.message || "Login failed. Please try again.");
+      setError(extractErrorMessage(err) || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

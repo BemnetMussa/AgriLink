@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, User, MapPin, CheckCircle, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { userApi, authApi } from "@/lib/api";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export default function ProfileSetupPage() {
   const [userType, setUserType] = useState<"farmer" | "buyer" | null>(null);
@@ -109,7 +110,7 @@ export default function ProfileSetupPage() {
       // Redirect to listings
       router.push("/listings");
     } catch (err: any) {
-      setError(err.message || "Failed to complete profile setup");
+      setError(extractErrorMessage(err) || "Failed to complete profile setup");
       console.error("Error setting up profile:", err);
     } finally {
       setIsSubmitting(false);

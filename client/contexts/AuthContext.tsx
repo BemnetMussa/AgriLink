@@ -15,6 +15,16 @@ interface User {
   isVerified: boolean;
   isActive: boolean;
   avatar?: string;
+  passwordHash?: string | null;
+  farmerProfile?: {
+    farmName?: string;
+    farmLocation?: string;
+  };
+  buyerProfile?: {
+    businessName?: string;
+    businessType?: string;
+    address?: string;
+  };
 }
 
 interface AuthContextType {
@@ -42,16 +52,57 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  const refreshUser = async () => {
+    try {
+      const response = await userApi.getMe();
+      if (response.success && response.data) {
+        setUser(response.data);
+        // Update user cookie
+        Cookies.set('user', JSON.stringify(response.data), { 
+          expires: 7, 
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' 
+        });
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
+    setMounted(true);
+    
+    // Only run client-side code after mount
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+    
     // Check if user is logged in on mount (check both cookie and localStorage)
-    const token = typeof window !== 'undefined' 
-      ? (Cookies.get('accessToken') || localStorage.getItem('accessToken'))
-      : null;
+    const token = Cookies.get('accessToken') || localStorage.getItem('accessToken');
+    
+    // Try to load user from cookie first for faster initial render
+    const userCookie = Cookies.get('user');
+    if (userCookie) {
+      try {
+        const userData = JSON.parse(userCookie);
+        setUser(userData);
+      } catch (e) {
+        // Invalid cookie, ignore
+      }
+    }
+    
     if (token) {
       refreshUser().catch(() => {
         // If refresh fails, clear token
         api.setToken(null);
+        Cookies.remove('accessToken', { path: '/' });
+        Cookies.remove('user', { path: '/' });
+        Cookies.remove('refreshToken', { path: '/' });
         setUser(null);
         setLoading(false);
       });
@@ -59,18 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
-
-  const refreshUser = async () => {
-    try {
-      const response = await userApi.getMe();
-      if (response.success && response.data) {
-        setUser(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to refresh user:', error);
-      throw error;
-    }
-  };
 
   const login = async (phoneNumber: string, password: string) => {
     try {
@@ -80,7 +119,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         api.setToken(accessToken);
         if (refreshToken) {
           localStorage.setItem('refreshToken', refreshToken);
+          Cookies.set('refreshToken', refreshToken, { 
+            expires: 30, 
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' 
+          });
         }
+        // Store user data in cookie for quick access
+        Cookies.set('user', JSON.stringify(user), { 
+          expires: 7, 
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' 
+        });
         setUser(user);
       }
     } catch (error: any) {
@@ -96,7 +146,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         api.setToken(accessToken);
         if (refreshToken) {
           localStorage.setItem('refreshToken', refreshToken);
+          Cookies.set('refreshToken', refreshToken, { 
+            expires: 30, 
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' 
+          });
         }
+        // Store user data in cookie
+        Cookies.set('user', JSON.stringify(user), { 
+          expires: 7, 
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' 
+        });
         setUser(user);
       } else {
         throw new Error('OTP verification failed');
@@ -122,7 +183,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         api.setToken(accessToken);
         if (refreshToken) {
           localStorage.setItem('refreshToken', refreshToken);
+          Cookies.set('refreshToken', refreshToken, { 
+            expires: 30, 
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' 
+          });
         }
+        // Store user data in cookie
+        Cookies.set('user', JSON.stringify(user), { 
+          expires: 7, 
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' 
+        });
         setUser(user);
       }
     } catch (error: any) {
@@ -144,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = localStorage.getItem('refreshToken') || Cookies.get('refreshToken');
       if (refreshToken) {
         await authApi.logout(refreshToken);
       }
@@ -153,11 +225,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       api.setToken(null);
       localStorage.removeItem('refreshToken');
-      Cookies.remove('accessToken');
+      Cookies.remove('accessToken', { path: '/' });
+      Cookies.remove('refreshToken', { path: '/' });
+      Cookies.remove('user', { path: '/' });
       setUser(null);
     }
   };
 
+  // Always provide the context, even during SSR
+  // The context value will be updated once mounted
   return (
     <AuthContext.Provider
       value={{
