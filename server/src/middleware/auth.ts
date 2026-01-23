@@ -76,8 +76,11 @@ export const authenticate = async (
       throw new AuthenticationError('Token not yet valid');
     }
     
-    // Log unexpected errors for debugging
-    console.error('Authentication error:', error);
+    // Only log unexpected errors in development
+    // Don't log expected authentication failures (missing/invalid tokens)
+    if (process.env.NODE_ENV === 'development' && error.name !== 'JsonWebTokenError') {
+      console.error('Authentication error:', error);
+    }
     throw new AuthenticationError('Invalid or expired token');
   }
 };

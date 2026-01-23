@@ -133,6 +133,11 @@ model Product {
   @@index([status])
   @@index([location])
   @@index([createdAt])
+  @@index([price])
+  @@index([rating])
+  @@index([status, category])
+  @@index([status, location])
+  @@index([status, createdAt])
   @@map("products")
 }
 
