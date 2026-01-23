@@ -94,6 +94,20 @@ class ApiClient {
       }
 
       if (!response.ok) {
+        // If unauthorized (401), clear token and redirect to login
+        if (response.status === 401) {
+          this.setToken(null);
+          // Only redirect if we're in the browser and not already on login/signup pages
+          if (typeof window !== 'undefined') {
+            const currentPath = window.location.pathname;
+            if (!currentPath.startsWith('/login') && !currentPath.startsWith('/signup')) {
+              // Store the current path to redirect back after login
+              sessionStorage.setItem('redirectAfterLogin', currentPath);
+              window.location.href = '/login';
+            }
+          }
+        }
+        
         // Extract clean error message from response using utility
         const errorMessage = extractErrorMessage(data || 'Request failed');
         throw new Error(errorMessage);

@@ -41,11 +41,15 @@ export const errorHandler = (
 
   // Handle JWT errors
   if (err.name === 'JsonWebTokenError') {
-    return sendError(res, 'Invalid token.', 401, err);
+    return sendError(res, 'Invalid token. Please login again.', 401, err);
   }
 
   if (err.name === 'TokenExpiredError') {
-    return sendError(res, 'Token expired.', 401, err);
+    return sendError(res, 'Token expired. Please login again.', 401, err);
+  }
+
+  if (err.name === 'NotBeforeError') {
+    return sendError(res, 'Token not yet valid.', 401, err);
   }
 
   // Default error

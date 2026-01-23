@@ -22,7 +22,7 @@ export default function ProfileSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
 
   const crops = ["Teff", "Wheat", "Barley", "Maize", "Coffee", "Vegetables"];
 
@@ -107,8 +107,11 @@ export default function ProfileSetupPage() {
       // Final refresh to get all updated data
       await refreshUser();
 
-      // Redirect to listings
-      router.push("/listings");
+      // Logout the user after successful registration
+      await logout();
+
+      // Show success message and redirect to login
+      router.push("/login?registered=true");
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to complete profile setup");
       console.error("Error setting up profile:", err);
