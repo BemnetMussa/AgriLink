@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Clock, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 function VerifyOTPContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -76,7 +77,7 @@ function VerifyOTPContent() {
       await loginWithOTP(phoneNumber, otpCode, "REGISTRATION");
       router.push("/signup/profile");
     } catch (err: any) {
-      setError(err.message || "Invalid OTP. Please try again.");
+      setError(extractErrorMessage(err) || "Invalid OTP. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +93,7 @@ function VerifyOTPContent() {
         setDevOtp(otpCode);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to resend OTP");
+      setError(extractErrorMessage(err) || "Failed to resend OTP");
     }
   };
 

@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { extractErrorMessage } from '../utils/errorHandler';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -70,18 +71,44 @@ class ApiClient {
         headers,
       });
 
-      const data = await response.json();
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          // If JSON parsing fails, read as text
+          const text = await response.text();
+          throw new Error(text || 'Invalid response from server');
+        }
+      } else {
+        // If not JSON, read as text
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(text || 'Request failed');
+        }
+        // If successful but not JSON, return as data
+        return { success: true, message: 'Success', data: text } as ApiResponse<T>;
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'Request failed');
+        // Extract clean error message from response using utility
+        const errorMessage = extractErrorMessage(data || 'Request failed');
+        throw new Error(errorMessage);
       }
 
       return data;
     } catch (error: any) {
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Network error. Please check your connection.');
+      // Handle network errors
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        throw new Error('Network error. Please check your connection and ensure the backend server is running.');
       }
-      throw error;
+      
+      // Extract clean error message using utility function
+      const cleanMessage = extractErrorMessage(error);
+      throw new Error(cleanMessage);
     }
   }
 

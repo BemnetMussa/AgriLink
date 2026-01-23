@@ -283,6 +283,7 @@ export class AuthService {
   }
 
   // Set password for user who doesn't have one yet (after OTP registration)
+  // If password already exists, update it (for convenience during registration)
   async setPassword(userId: string, newPassword: string): Promise<void> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -292,10 +293,8 @@ export class AuthService {
       throw new AuthenticationError('User not found');
     }
 
-    if (user.passwordHash) {
-      throw new ValidationError('Password already set. Please use change password.');
-    }
-
+    // Allow setting/updating password during registration flow
+    // If password exists, we'll update it (user might be re-registering)
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({

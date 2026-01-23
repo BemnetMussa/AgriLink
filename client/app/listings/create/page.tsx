@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { productApi, api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export default function CreateListingPage() {
     const router = useRouter();
@@ -254,7 +255,7 @@ export default function CreateListingPage() {
                 }
             }
         } catch (err: any) {
-            setError(err.message || "Failed to create listing. Please try again.");
+            setError(extractErrorMessage(err) || "Failed to create listing. Please try again.");
             console.error("Error creating listing:", err);
         } finally {
             setIsSubmitting(false);

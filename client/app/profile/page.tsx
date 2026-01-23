@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, User, Mail, MapPin, Save, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { userApi, authApi } from "@/lib/api";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -20,6 +21,17 @@ export default function ProfilePage() {
     language: "english",
   });
 
+  const [farmerProfile, setFarmerProfile] = useState({
+    farmName: "",
+    farmLocation: "",
+  });
+
+  const [buyerProfile, setBuyerProfile] = useState({
+    businessName: "",
+    businessType: "",
+    address: "",
+  });
+
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
     newPassword: "",
@@ -29,14 +41,45 @@ export default function ProfilePage() {
   const [showPasswordSection, setShowPasswordSection] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        language: user.language?.toLowerCase() || "english",
-      });
-    }
+    const loadUserData = async () => {
+      if (user) {
+        setFormData({
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          email: user.email || "",
+          language: user.language?.toLowerCase() || "english",
+        });
+        
+        // Fetch full user data with farmer/buyer profiles
+        try {
+          const response = await userApi.getMe();
+          if (response.success && response.data) {
+            const fullUser = response.data;
+            
+            // Load farmer profile if exists
+            if (fullUser.farmerProfile) {
+              setFarmerProfile({
+                farmName: fullUser.farmerProfile.farmName || "",
+                farmLocation: fullUser.farmerProfile.farmLocation || "",
+              });
+            }
+            
+            // Load buyer profile if exists
+            if (fullUser.buyerProfile) {
+              setBuyerProfile({
+                businessName: fullUser.buyerProfile.businessName || "",
+                businessType: fullUser.buyerProfile.businessType || "",
+                address: fullUser.buyerProfile.address || "",
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load profile data:", err);
+        }
+      }
+    };
+    
+    loadUserData();
   }, [user]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -46,6 +89,7 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
+      // Update basic profile
       await userApi.updateProfile({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -53,11 +97,25 @@ export default function ProfilePage() {
         language: formData.language,
       });
 
+      // Update role-specific profile
+      if (user?.role === 'FARMER') {
+        await userApi.updateFarmerProfile({
+          farmName: farmerProfile.farmName || undefined,
+          farmLocation: farmerProfile.farmLocation || undefined,
+        });
+      } else if (user?.role === 'BUYER') {
+        await userApi.updateBuyerProfile({
+          businessName: buyerProfile.businessName || undefined,
+          businessType: buyerProfile.businessType || undefined,
+          address: buyerProfile.address || undefined,
+        });
+      }
+
       await refreshUser();
       setSuccess("Profile updated successfully!");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.message || "Failed to update profile");
+      setError(extractErrorMessage(err) || "Failed to update profile");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +140,7 @@ export default function ProfilePage() {
       setShowPasswordSection(false);
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.message || "Failed to change password");
+      setError(extractErrorMessage(err) || "Failed to change password");
     } finally {
       setIsLoading(false);
     }
@@ -197,6 +255,84 @@ export default function ProfilePage() {
                   <option value="oromo">Afaan Oromoo</option>
                 </select>
               </div>
+
+              {/* Farmer Profile Fields */}
+              {user?.role === 'FARMER' && (
+                <div className="pt-4 border-t">
+                  <h3 className="text-md font-semibold text-gray-900 mb-4">Farm Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Farm Name
+                      </label>
+                      <input
+                        type="text"
+                        value={farmerProfile.farmName}
+                        onChange={(e) => setFarmerProfile({...farmerProfile, farmName: e.target.value})}
+                        placeholder="Enter your farm name"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Farm Location
+                      </label>
+                      <input
+                        type="text"
+                        value={farmerProfile.farmLocation}
+                        onChange={(e) => setFarmerProfile({...farmerProfile, farmLocation: e.target.value})}
+                        placeholder="e.g., Addis Ababa, Ethiopia"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Buyer Profile Fields */}
+              {user?.role === 'BUYER' && (
+                <div className="pt-4 border-t">
+                  <h3 className="text-md font-semibold text-gray-900 mb-4">Business Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Business Name
+                      </label>
+                      <input
+                        type="text"
+                        value={buyerProfile.businessName}
+                        onChange={(e) => setBuyerProfile({...buyerProfile, businessName: e.target.value})}
+                        placeholder="Enter your business name"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Business Type
+                      </label>
+                      <input
+                        type="text"
+                        value={buyerProfile.businessType}
+                        onChange={(e) => setBuyerProfile({...buyerProfile, businessType: e.target.value})}
+                        placeholder="e.g., Retail, Wholesale, Restaurant"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Business Address
+                      </label>
+                      <input
+                        type="text"
+                        value={buyerProfile.address}
+                        onChange={(e) => setBuyerProfile({...buyerProfile, address: e.target.value})}
+                        placeholder="Enter your business address"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4">
                 <button

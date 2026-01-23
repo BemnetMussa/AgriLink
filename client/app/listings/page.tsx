@@ -5,6 +5,7 @@ import FilterPanel from "@/component/listings/FilterPanel";
 import ListingsGrid from "@/component/listings/ListingsGrid";
 import SearchBar from "@/component/listings/SearchBar";
 import { productApi } from "@/lib/api";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 interface Product {
   id: string;
@@ -18,16 +19,7 @@ interface Product {
   rating: number;
   soldQuantity: number;
   location: string;
-  farmer: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    farmerProfile?: {
-      verificationStatus: string;
-      rating: number;
-    };
-  };
+  farmer: string; // Changed to string to match ListingCard expectations
   status: string;
   syncStatus: string;
   description?: string;
@@ -48,11 +40,19 @@ export default function ListingsPage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch products from backend
   useEffect(() => {
-    fetchProducts();
-  }, [selectedCrops, priceRange, quantityRange, searchQuery, selectedLocation, sortBy, page]);
+    if (mounted) {
+      fetchProducts();
+    }
+  }, [mounted, selectedCrops, priceRange, quantityRange, searchQuery, selectedLocation, sortBy, page]);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -86,16 +86,24 @@ export default function ListingsPage() {
       const response = await productApi.getProducts(params);
       
       if (response.success && response.data) {
-        const products = response.data.map((product: any) => ({
+        // Handle both array and object response formats
+        const productsArray = Array.isArray(response.data) ? response.data : (response.data.products || []);
+        const products = productsArray.map((product: any) => ({
           ...product,
-          farmer: product.farmer?.firstName + " " + product.farmer?.lastName || "Unknown",
+          // Convert farmer object to string for ListingCard component
+          farmer: product.farmer 
+            ? `${product.farmer.firstName || ''} ${product.farmer.lastName || ''}`.trim() || 'Unknown'
+            : 'Unknown',
           image: product.images?.[0] || product.image || "/potatoes.png",
         }));
         setListings(products);
-        setTotal(response.pagination?.total || 0);
+        setTotal(response.pagination?.total || productsArray.length);
+      } else {
+        setListings([]);
+        setTotal(0);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to load products");
+      setError(extractErrorMessage(err) || "Failed to load products");
       console.error("Error fetching products:", err);
     } finally {
       setIsLoading(false);
@@ -136,6 +144,20 @@ export default function ListingsPage() {
     setMapViewEnabled(false);
     setPage(1);
   };
+
+  // Prevent hydration mismatch by not rendering dynamic content until mounted
+  if (!mounted) {
+    return (
+      <section className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-[1440px] px-6 py-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Listings & Search</h1>
+          <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-600 border-t-transparent"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen bg-gray-50">
