@@ -73,12 +73,14 @@ export default function Navbar() {
             >
               Listings
             </Link>
-            <Link
-              href="/listings/create"
-              className={`font-medium transition pb-1 border-b-2 ${isSell ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
-            >
-              Sell Produce
-            </Link>
+            {isAuthenticated && user?.role === 'FARMER' && (
+              <Link
+                href="/listings/create"
+                className={`font-medium transition pb-1 border-b-2 ${isSell ? "text-green-600 border-green-600 font-semibold" : "text-gray-500 border-transparent hover:text-green-600 hover:border-green-200"}`}
+              >
+                Sell Produce
+              </Link>
+            )}
           </div>
 
           {isAuthenticated ? (

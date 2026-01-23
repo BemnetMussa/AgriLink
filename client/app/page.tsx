@@ -44,12 +44,14 @@ export default function HomePage() {
                 </Link>
 
                 {isAuthenticated ? (
-                  <Link
-                    href="/listings/create"
-                    className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
-                  >
-                    Sell Your Produce
-                  </Link>
+                  user?.role === 'FARMER' ? (
+                    <Link
+                      href="/listings/create"
+                      className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
+                    >
+                      Sell Your Produce
+                    </Link>
+                  ) : null
                 ) : (
                   <Link
                     href="/signup"
