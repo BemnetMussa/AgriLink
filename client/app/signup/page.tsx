@@ -41,30 +41,6 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Welcome section */}
-        <div className="mb-10">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Create Your Account
-          </h1>
-          <div className="flex items-center gap-2 text-gray-600 mb-6">
-            <Wifi size={16} />
-            <span className="text-sm">Your direct link to Ethiopian agriculture.</span>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Connect Farmers & Buyers
-            </h2>
-            <p className="text-gray-600 text-sm mb-6">
-              Agrilink connects you directly with farmers and buyers across Ethiopia for fresh produce.
-            </p>
-            
-            <p className="text-gray-600 text-sm mb-4">
-              Sign up with your email, full name, and password.
-            </p>
-          </div>
-        </div>
-
         {/* Signup form */}
         <div className="bg-white rounded-xl p-6 shadow-sm border">
           <div className="flex items-center gap-2 mb-4">
