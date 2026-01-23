@@ -1,9 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Globe, WifiOff, Lock, Users, Bell, MapPin, } from "lucide-react";
 import { Smartphone, Wallet, RefreshCw } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
+  const { isAuthenticated, user } = useAuth();
+
+  // The home page will automatically show the user's logged-in state
+  // because the AuthProvider loads user from cookies on mount
+  // No redirect needed - just display content based on auth state
+
   return (
     <>
       {/* ================= HERO SECTION ================= */}
@@ -34,13 +43,31 @@ export default function HomePage() {
                   Browse Listings
                 </Link>
 
-                <Link
-                  href="/listings/create"
-                  className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
-                >
-                  Sell Your Produce
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    href="/listings/create"
+                    className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
+                  >
+                    Sell Your Produce
+                  </Link>
+                ) : (
+                  <Link
+                    href="/signup"
+                    className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
+                  >
+                    Get Started
+                  </Link>
+                )}
               </div>
+
+              {isAuthenticated && user && (
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    Welcome back, <span className="font-semibold">{user.firstName} {user.lastName}</span>! 
+                    You're logged in and ready to use AgriLink.
+                  </p>
+                </div>
+              )}
 
               <p className="mt-6 text-sm text-gray-500">
                 Multilingual support: English, Amharic, Afaan Oromoo
