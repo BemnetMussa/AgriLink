@@ -86,7 +86,12 @@ export default function ListingsPage() {
       const response = await productApi.getProducts(params);
       
       if (response.success && response.data) {
-        const productsArray = Array.isArray(response.data) ? response.data : (response.data.products || []);
+        let productsArray: any[] = [];
+        if (Array.isArray(response.data)) {
+          productsArray = response.data;
+        } else if (response.data && typeof response.data === 'object' && 'products' in response.data) {
+          productsArray = (response.data as any).products || [];
+        }
         const products = productsArray.map((product: any) => ({
           ...product,
           farmer: product.farmer 

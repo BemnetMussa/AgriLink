@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { User, Settings, LogOut, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
-  const pathname = "/"; // Demo
+  const pathname: string = "/"; // Demo
   const isAuthenticated = true; // Demo
   const user = { firstName: "Abebe", lastName: "Kebede", email: "abebe@example.com", role: "FARMER" };
   
