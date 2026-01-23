@@ -10,6 +10,7 @@ const updateProfileSchema = z.object({
   email: z.string().email().optional(),
   language: z.enum(['english', 'amharic', 'oromo']).optional(),
   avatar: z.string().url().optional(),
+  role: z.enum(['FARMER', 'BUYER']).optional(), // Allow role update during profile setup
 });
 
 const updateFarmerProfileSchema = z.object({

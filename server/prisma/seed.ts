@@ -128,6 +128,67 @@ async function main() {
     console.log('✅ Product created:', product.title);
   }
 
+  // Additional dummy data for testing
+  const extraFarmerPassword = await bcrypt.hash('farmer456', 10);
+  const extraFarmer = await prisma.user.upsert({
+    where: { phoneNumber: '944444444' },
+    update: {},
+    create: {
+      phoneNumber: '944444444',
+      email: 'farmer2@agrilink.com',
+      passwordHash: extraFarmerPassword,
+      firstName: 'Bekele',
+      lastName: 'Jemal',
+      role: UserRole.FARMER,
+      language: Language.AMHARIC,
+      isVerified: true,
+      isActive: true,
+      farmerProfile: {
+        create: {
+          farmName: 'Jemal Family Farm',
+          farmLocation: 'Bishoftu, Oromia Region',
+          verificationStatus: 'VERIFIED',
+          verifiedAt: new Date(),
+        },
+      },
+    },
+  });
+
+  const extraProducts = [
+    {
+      title: 'Fresh Green Peppers',
+      description: 'Crisp green peppers harvested this week.',
+      category: 'Vegetables',
+      price: 40,
+      quantity: 300,
+      minOrder: 20,
+      unit: 'kg',
+      location: 'Bishoftu',
+      images: ['/green-peppers.png'],
+    },
+    {
+      title: 'Yellow Onions',
+      description: 'Locally grown onions perfect for export or local markets.',
+      category: 'Onions',
+      price: 30,
+      quantity: 400,
+      minOrder: 30,
+      unit: 'kg',
+      location: 'Adama',
+      images: ['/onions.png'],
+    },
+  ];
+
+  for (const productData of extraProducts) {
+    const product = await prisma.product.create({
+      data: {
+        ...productData,
+        farmerId: extraFarmer.id,
+      },
+    });
+    console.log('✅ Extra product created:', product.title);
+  }
+
   console.log('🎉 Seeding completed!');
 }
 

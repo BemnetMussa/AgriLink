@@ -12,12 +12,13 @@ import { config } from '../config/env';
 const router = Router();
 const apiPrefix = `/api/${config.apiVersion}`;
 
-// Health check
-router.get('/health', (req, res) => {
+// Health check - accessible at /api/v1/health
+router.get(`${apiPrefix}/health`, (req, res) => {
   res.status(200).json({
     success: true,
     message: 'AgriLink API is running',
     timestamp: new Date().toISOString(),
+    version: config.apiVersion,
   });
 });
 

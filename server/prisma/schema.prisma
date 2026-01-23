@@ -6,13 +6,13 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 // User Model
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  id            String    @id @default(uuid())
   phoneNumber   String    @unique
   email         String?   @unique
   passwordHash  String?
@@ -40,6 +40,8 @@ model User {
   refreshTokens    RefreshToken[]
   otpCodes         OtpCode[]
 
+  @@index([phoneNumber])
+  @@index([email])
   @@index([role])
   @@map("users")
 }
@@ -58,8 +60,8 @@ enum Language {
 
 // Farmer Profile
 model FarmerProfile {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @unique @db.ObjectId
+  id              String   @id @default(uuid())
+  userId         String   @unique
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   farmName       String?
   farmLocation   String?
@@ -85,8 +87,8 @@ enum VerificationStatus {
 
 // Buyer Profile
 model BuyerProfile {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String   @unique @db.ObjectId
+  id            String   @id @default(uuid())
+  userId        String   @unique
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessName  String?
   businessType  String?
@@ -99,8 +101,8 @@ model BuyerProfile {
 
 // Product/Listing Model
 model Product {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  farmerId      String      @db.ObjectId
+  id            String      @id @default(uuid())
+  farmerId      String
   farmer        User        @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   title         String
   description   String?
@@ -149,11 +151,11 @@ enum SyncStatus {
 
 // Order Model
 model Order {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  id              String        @id @default(uuid())
   orderNumber     String        @unique
-  buyerId         String        @db.ObjectId
+  buyerId         String
   buyer           User          @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
-  farmerId        String        @db.ObjectId
+  farmerId        String
   farmer          User          @relation("FarmerOrders", fields: [farmerId], references: [id], onDelete: Cascade)
   status          OrderStatus   @default(PENDING)
   totalAmount     Float
@@ -175,6 +177,7 @@ model Order {
   @@index([buyerId])
   @@index([farmerId])
   @@index([status])
+  @@index([orderNumber])
   @@index([createdAt])
   @@map("orders")
 }
@@ -195,10 +198,10 @@ enum OrderStatus {
 
 // Order Item
 model OrderItem {
-  id          String  @id @default(auto()) @map("_id") @db.ObjectId
-  orderId     String  @db.ObjectId
+  id          String  @id @default(uuid())
+  orderId     String
   order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String  @db.ObjectId
+  productId   String
   product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity    Float
   unitPrice   Float
@@ -212,8 +215,8 @@ model OrderItem {
 
 // Payment Model with Escrow
 model Payment {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  orderId         String        @unique @db.ObjectId
+  id              String        @id @default(uuid())
+  orderId         String        @unique
   order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount          Float
   currency        String        @default("ETB")
@@ -230,8 +233,10 @@ model Payment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([orderId])
   @@index([status])
   @@index([escrowStatus])
+  @@index([transactionId])
   @@map("payments")
 }
 
@@ -262,14 +267,14 @@ enum EscrowStatus {
 
 // Review/Rating Model
 model Review {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId     String   @db.ObjectId
+  id          String   @id @default(uuid())
+  orderId     String
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  reviewerId  String   @db.ObjectId
+  reviewerId  String
   reviewer    User     @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
-  reviewedUserId String @db.ObjectId
+  reviewedUserId String
   reviewedUser User    @relation("ReviewedUserReviews", fields: [reviewedUserId], references: [id], onDelete: Cascade)
-  productId   String?  @db.ObjectId
+  productId   String?
   product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   rating      Int      // 1-5 stars
   comment     String?
@@ -287,12 +292,12 @@ model Review {
 
 // Chat/Message Model
 model Message {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  orderId     String      @db.ObjectId
+  id          String      @id @default(uuid())
+  orderId     String
   order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  senderId    String      @db.ObjectId
+  senderId    String
   sender      User        @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId  String      @db.ObjectId
+  receiverId  String
   receiver    User        @relation("ReceiverMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   content     String
   messageType MessageType @default(TEXT)
@@ -317,8 +322,8 @@ enum MessageType {
 
 // Notification Model
 model Notification {
-  id        String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String           @db.ObjectId
+  id        String           @id @default(uuid())
+  userId    String
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   title     String
@@ -350,8 +355,8 @@ enum NotificationType {
 
 // OTP Code Model
 model OtpCode {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String?  @db.ObjectId
+  id          String   @id @default(uuid())
+  userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   phoneNumber String
   code        String
@@ -375,14 +380,15 @@ enum OtpPurpose {
 
 // Refresh Token Model
 model RefreshToken {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
+  id        String   @id @default(uuid())
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([token])
   @@index([expiresAt])
   @@map("refresh_tokens")
 }

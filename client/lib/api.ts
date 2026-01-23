@@ -1,3 +1,5 @@
+import Cookies from 'js-cookie';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 export interface ApiResponse<T = any> {
@@ -20,7 +22,12 @@ class ApiClient {
   constructor(baseURL: string) {
     this.baseURL = baseURL;
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('accessToken');
+      // Check cookie first, then localStorage
+      this.token = Cookies.get('accessToken') || localStorage.getItem('accessToken') || null;
+      // Sync cookie to localStorage if cookie exists but localStorage doesn't
+      if (this.token && !localStorage.getItem('accessToken')) {
+        localStorage.setItem('accessToken', this.token);
+      }
     }
   }
 
@@ -29,8 +36,16 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       if (token) {
         localStorage.setItem('accessToken', token);
+        // Set cookie for persistent login (expires in 7 days)
+        // secure: only true in production (HTTPS), sameSite: 'lax' for better compatibility
+        Cookies.set('accessToken', token, { 
+          expires: 7, 
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' 
+        });
       } else {
         localStorage.removeItem('accessToken');
+        Cookies.remove('accessToken', { path: '/' });
       }
     }
   }
@@ -150,6 +165,9 @@ export const authApi = {
 
   resetPassword: (phoneNumber: string, otp: string, newPassword: string) =>
     api.post('/auth/reset-password', { phoneNumber, otp, newPassword }),
+
+  setPassword: (newPassword: string) =>
+    api.post('/auth/set-password', { newPassword }),
 };
 
 // User API

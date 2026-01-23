@@ -11,16 +11,27 @@ function VerifyOTPContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { loginWithOTP, requestOTP } = useAuth();
+  const { requestOTP, loginWithOTP } = useAuth();
 
   useEffect(() => {
+    setMounted(true);
+
     const phone = searchParams.get("phone");
     if (phone) {
       setPhoneNumber(phone);
     } else {
       router.push("/signup");
+    }
+    
+    // In development, show OTP if available
+    const storedOtp = sessionStorage.getItem('dev_otp');
+    if (storedOtp) {
+      setDevOtp(storedOtp);
+      sessionStorage.removeItem('dev_otp'); // Clear after showing
     }
   }, [searchParams, router]);
 
@@ -61,7 +72,8 @@ function VerifyOTPContent() {
     }
 
     try {
-      await loginWithOTP(phoneNumber, otpCode);
+      // Use REGISTRATION purpose to match the OTP that was requested
+      await loginWithOTP(phoneNumber, otpCode, "REGISTRATION");
       router.push("/signup/profile");
     } catch (err: any) {
       setError(err.message || "Invalid OTP. Please try again.");
@@ -74,7 +86,11 @@ function VerifyOTPContent() {
     setTimer(60);
     setError("");
     try {
-      await requestOTP(phoneNumber, "REGISTRATION");
+      const otpCode = await requestOTP(phoneNumber, "REGISTRATION");
+      // In development, show the new OTP
+      if (otpCode) {
+        setDevOtp(otpCode);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to resend OTP");
     }
@@ -123,6 +139,15 @@ function VerifyOTPContent() {
             </div>
           )}
 
+          {/* Development OTP Display (client-only to avoid hydration mismatch) */}
+          {mounted && devOtp && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm font-semibold text-green-800 mb-1">Development Mode - OTP Code:</p>
+              <p className="text-2xl font-bold text-green-600 text-center">{devOtp}</p>
+              <p className="text-xs text-green-600 mt-2 text-center">This is only shown in development</p>
+            </div>
+          )}
+
           {/* OTP Input */}
           <form onSubmit={handleVerify}>
             <div className="mb-6">
@@ -145,22 +170,24 @@ function VerifyOTPContent() {
                 ))}
               </div>
 
-              {/* Timer and Resend */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock size={16} />
-                  <span className="text-sm">00:{timer.toString().padStart(2, '0')}</span>
-                </div>
+              {/* Timer and Resend (client-only to avoid hydration mismatch) */}
+              {mounted && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Clock size={16} />
+                    <span className="text-sm">00:{timer.toString().padStart(2, '0')}</span>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={handleResendOTP}
-                  disabled={timer > 0}
-                  className={`text-sm ${timer > 0 ? 'text-gray-400' : 'text-green-600 hover:underline'}`}
-                >
-                  Resend OTP
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={timer > 0}
+                    className={`text-sm ${timer > 0 ? 'text-gray-400' : 'text-green-600 hover:underline'}`}
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
