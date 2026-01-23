@@ -24,12 +24,15 @@ export default function CreateListingPage() {
     const router = useRouter();
     const { isAuthenticated, user } = useAuth();
 
-    // Redirect if not authenticated
+    // Redirect if not authenticated or not a farmer
     useEffect(() => {
         if (!isAuthenticated) {
             router.push("/login");
+        } else if (user && user.role !== 'FARMER') {
+            // Redirect buyers to listings page
+            router.push("/listings");
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, user, router]);
 
     // State for form fields
     const [cropType, setCropType] = useState("");
@@ -46,6 +49,7 @@ export default function CreateListingPage() {
     const [isLocating, setIsLocating] = useState(false);
     const [locationModalState, setLocationModalState] = useState<'request' | 'locating' | 'error' | null>(null);
     const [locationErrorCode, setLocationErrorCode] = useState<number | null>(null);
+    const [isSecureOrigin, setIsSecureOrigin] = useState(true);
 
     // Monitor network status
     useEffect(() => {
@@ -61,6 +65,14 @@ export default function CreateListingPage() {
             window.removeEventListener("online", handleOnline);
             window.removeEventListener("offline", handleOffline);
         };
+    }, []);
+
+    // Check if we're on a secure origin
+    useEffect(() => {
+        const secure = window.location.protocol === 'https:' || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+        setIsSecureOrigin(secure);
     }, []);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +170,14 @@ export default function CreateListingPage() {
             return;
         }
 
+        // Check if we're on a secure origin (HTTPS or localhost)
+        if (!isSecureOrigin) {
+            setLocationModalState('error');
+            setLocationErrorCode(1); // PERMISSION_DENIED equivalent
+            setIsLocating(false);
+            return;
+        }
+
         const options = {
             enableHighAccuracy: true,
             timeout: 10000,
@@ -176,10 +196,21 @@ export default function CreateListingPage() {
             const errCode = error.code;
             const errMsg = error.message;
 
+            // Check for secure origin error specifically
+            if (errMsg.includes('secure origins') || errMsg.includes('Only secure origins')) {
+                setLocationErrorCode(1); // PERMISSION_DENIED
+                setLocationModalState('error');
+                setIsLocating(false);
+                return;
+            }
+
             if ((errCode === 3 || errCode === 2) && options.enableHighAccuracy) {
                 console.warn("High accuracy geolocation timed out/failed, falling back to network...");
                 navigator.geolocation.getCurrentPosition(successCallback, (fallbackError) => {
-                    console.error(`Geolocation Final Error [${fallbackError.code}]: ${fallbackError.message}`);
+                    // Only log non-secure origin errors, suppress others
+                    if (!fallbackError.message.includes('secure origins') && !fallbackError.message.includes('Only secure origins')) {
+                        console.error(`Geolocation Final Error [${fallbackError.code}]: ${fallbackError.message}`);
+                    }
                     setLocationErrorCode(fallbackError.code);
                     setLocationModalState('error');
                     setIsLocating(false);
@@ -187,7 +218,10 @@ export default function CreateListingPage() {
                 return;
             }
 
-            console.error(`Geolocation Error [${errCode}]: ${errMsg}`);
+            // Only log non-secure origin errors
+            if (!errMsg.includes('secure origins') && !errMsg.includes('Only secure origins')) {
+                console.error(`Geolocation Error [${errCode}]: ${errMsg}`);
+            }
             setLocationErrorCode(errCode);
             setLocationModalState('error');
             setIsLocating(false);
@@ -262,7 +296,7 @@ export default function CreateListingPage() {
         }
     };
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || (user && user.role !== 'FARMER')) {
         return null; // Will redirect
     }
 
@@ -650,27 +684,40 @@ export default function CreateListingPage() {
                                             <Info className="h-4 w-4 text-blue-500" />
                                             How to fix this:
                                         </p>
-                                        <ul className="space-y-3 text-sm text-gray-600">
-                                            {locationErrorCode === 1 ? (
-                                                <>
-                                                    <li className="flex items-start gap-2">
-                                                        <span className="font-bold text-green-600">1.</span>
-                                                        <span>Check your browser address bar for a blocked location icon and click <b>"Allow"</b>.</span>
-                                                    </li>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <li className="flex items-start gap-2">
-                                                        <span className="font-bold text-green-600">1.</span>
-                                                        <span>Open your device's <b>Settings</b>.</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-2">
-                                                        <span className="font-bold text-green-600">2.</span>
-                                                        <span>Search for <b>"Location Services"</b> and ensure the switch is <b>ON</b>.</span>
-                                                    </li>
-                                                </>
-                                            )}
-                                        </ul>
+                                        {!isSecureOrigin ? (
+                                            <ul className="space-y-3 text-sm text-gray-600">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="font-bold text-green-600">1.</span>
+                                                    <span>Geolocation requires a secure connection (HTTPS). Please access this site using <b>https://</b> or use <b>localhost</b> for development.</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="font-bold text-green-600">2.</span>
+                                                    <span>Alternatively, you can enter your location manually in the form above.</span>
+                                                </li>
+                                            </ul>
+                                        ) : locationErrorCode === 1 ? (
+                                            <ul className="space-y-3 text-sm text-gray-600">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="font-bold text-green-600">1.</span>
+                                                    <span>Check your browser address bar for a blocked location icon and click <b>"Allow"</b>.</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="font-bold text-green-600">2.</span>
+                                                    <span>Open your device's <b>Settings</b> and ensure <b>Location Services</b> is enabled.</span>
+                                                </li>
+                                            </ul>
+                                        ) : (
+                                            <ul className="space-y-3 text-sm text-gray-600">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="font-bold text-green-600">1.</span>
+                                                    <span>Open your device's <b>Settings</b>.</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="font-bold text-green-600">2.</span>
+                                                    <span>Search for <b>"Location Services"</b> and ensure the switch is <b>ON</b>.</span>
+                                                </li>
+                                            </ul>
+                                        )}
                                     </div>
                                     <div className="mt-8 flex flex-col gap-3">
                                         <button
@@ -679,30 +726,35 @@ export default function CreateListingPage() {
                                         >
                                             Try High Precision Again
                                         </button>
-                                        <button
-                                            onClick={() => {
-                                                setLocationModalState('locating');
-                                                navigator.geolocation.getCurrentPosition(
-                                                    (pos) => {
-                                                        const { latitude, longitude } = pos.coords;
-                                                        setCoords({ lat: latitude, lng: longitude });
-                                                        setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                                                        setIsLocating(false);
-                                                        setLocationModalState(null);
-                                                    },
-                                                    (err) => {
-                                                        console.error("Low Accuracy Retry Failed", err);
-                                                        setLocationErrorCode(err.code);
-                                                        setLocationModalState('error');
-                                                        setIsLocating(false);
-                                                    },
-                                                    { enableHighAccuracy: false, timeout: 10000 }
-                                                );
-                                            }}
-                                            className="w-full rounded-2xl border-2 border-gray-900 py-3.5 font-bold text-gray-900 hover:bg-gray-50 transition"
-                                        >
-                                            Try WiFi/Network Only
-                                        </button>
+                                        {isSecureOrigin ? (
+                                            <button
+                                                onClick={() => {
+                                                    setLocationModalState('locating');
+                                                    navigator.geolocation.getCurrentPosition(
+                                                        (pos) => {
+                                                            const { latitude, longitude } = pos.coords;
+                                                            setCoords({ lat: latitude, lng: longitude });
+                                                            setLocation(`Detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                                                            setIsLocating(false);
+                                                            setLocationModalState(null);
+                                                        },
+                                                        (err) => {
+                                                            // Only log if not a secure origin error
+                                                            if (!err.message.includes('secure origins') && !err.message.includes('Only secure origins')) {
+                                                                console.error("Low Accuracy Retry Failed", err);
+                                                            }
+                                                            setLocationErrorCode(err.code);
+                                                            setLocationModalState('error');
+                                                            setIsLocating(false);
+                                                        },
+                                                        { enableHighAccuracy: false, timeout: 10000 }
+                                                    );
+                                                }}
+                                                className="w-full rounded-2xl border-2 border-gray-900 py-3.5 font-bold text-gray-900 hover:bg-gray-50 transition"
+                                            >
+                                                Try WiFi/Network Only
+                                            </button>
+                                        ) : null}
                                         <button
                                             onClick={() => setLocationModalState(null)}
                                             className="mt-2 w-full rounded-2xl py-2 font-medium text-gray-400 hover:text-gray-600 transition"

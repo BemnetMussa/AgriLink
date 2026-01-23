@@ -50,11 +50,32 @@ const startServer = async (): Promise<void> => {
     await prisma.$connect();
     logger.info('Database connected successfully');
 
-    // Start HTTP server
-    app.listen(config.port, () => {
+    // Start HTTP server with port conflict handling
+    const server = app.listen(config.port, () => {
       logger.info(`🚀 AgriLink API server running on port ${config.port}`);
       logger.info(`📝 Environment: ${config.nodeEnv}`);
       logger.info(`🔗 API Base URL: http://localhost:${config.port}/api/${config.apiVersion}`);
+    });
+
+    server.on('error', (error: any) => {
+      if (error.code === 'EADDRINUSE') {
+        logger.error('');
+        logger.error('🔴 PORT CONFLICT ERROR');
+        logger.error('');
+        logger.error(`Port ${config.port} is already in use.`);
+        logger.error('');
+        logger.error('📋 FIX STEPS:');
+        logger.error(`1. Kill the process using port ${config.port}:`);
+        logger.error(`   Windows: netstat -ano | findstr :${config.port}`);
+        logger.error(`   Then: taskkill /PID <PID> /F`);
+        logger.error(`   Or run: .\\kill-port.ps1`);
+        logger.error('');
+        logger.error(`2. Or change the port in .env: PORT=5001`);
+        logger.error('');
+        process.exit(1);
+      } else {
+        throw error;
+      }
     });
   } catch (error: any) {
     logger.error('Failed to start server:', error);

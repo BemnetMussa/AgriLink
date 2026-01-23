@@ -13,13 +13,31 @@ const router = Router();
 const apiPrefix = `/api/${config.apiVersion}`;
 
 // Health check - accessible at /api/v1/health
-router.get(`${apiPrefix}/health`, (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'AgriLink API is running',
-    timestamp: new Date().toISOString(),
-    version: config.apiVersion,
-  });
+router.get(`${apiPrefix}/health`, async (req, res) => {
+  try {
+    // Check database connection
+    const prisma = (await import('../config/database')).default;
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({
+      success: true,
+      message: 'AgriLink API is running',
+      timestamp: new Date().toISOString(),
+      version: config.apiVersion,
+      environment: config.nodeEnv,
+      database: 'connected',
+      uptime: process.uptime(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      message: 'AgriLink API is running but database connection failed',
+      timestamp: new Date().toISOString(),
+      version: config.apiVersion,
+      environment: config.nodeEnv,
+      database: 'disconnected',
+    });
+  }
 });
 
 // API routes

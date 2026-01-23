@@ -134,6 +134,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(user);
       }
     } catch (error: any) {
+      // Check if it's a network error (backend not running)
+      if (error?.message?.includes('Failed to fetch') || 
+          error?.message?.includes('NetworkError') || 
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('Unable to connect') ||
+          error?.name === 'TypeError') {
+        throw new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+      }
       throw new Error(error.message || 'Login failed');
     }
   };
@@ -163,6 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('OTP verification failed');
       }
     } catch (error: any) {
+      // Check if it's a network error (backend not running)
+      if (error?.message?.includes('Failed to fetch') || 
+          error?.message?.includes('NetworkError') || 
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('Unable to connect') ||
+          error?.name === 'TypeError') {
+        throw new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+      }
       throw new Error(error.message || 'OTP verification failed');
     }
   };
@@ -198,6 +214,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(user);
       }
     } catch (error: any) {
+      // Check if it's a network error (backend not running)
+      if (error?.message?.includes('Failed to fetch') || 
+          error?.message?.includes('NetworkError') || 
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('Unable to connect') ||
+          error?.name === 'TypeError') {
+        throw new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+      }
       throw new Error(error.message || 'Registration failed');
     }
   };
@@ -210,6 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       throw new Error('OTP request failed');
     } catch (error: any) {
+      // Check if it's a network error (backend not running)
+      if (error?.message?.includes('Failed to fetch') || 
+          error?.message?.includes('NetworkError') || 
+          error?.message?.includes('Network error') ||
+          error?.name === 'TypeError') {
+        throw new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+      }
       throw new Error(error.message || 'Failed to request OTP');
     }
   };

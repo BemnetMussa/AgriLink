@@ -128,10 +128,13 @@ export class ProductService {
     }
 
     if (filters.search) {
+      // Enhanced search with full-text search capabilities
+      const searchTerm = filters.search.trim();
       where.OR = [
-        { title: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-        { category: { contains: filters.search, mode: 'insensitive' } },
+        { title: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { category: { contains: searchTerm, mode: 'insensitive' } },
+        { location: { contains: searchTerm, mode: 'insensitive' } },
       ];
     }
 

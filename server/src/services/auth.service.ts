@@ -203,9 +203,19 @@ export class AuthService {
       expiresIn: config.jwt.refreshExpiresIn,
     });
 
-    // Save refresh token
+    // Save refresh token - calculate expiration from config (e.g., "7d" = 7 days)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+    const refreshExpiresIn = config.jwt.refreshExpiresIn;
+    if (refreshExpiresIn.endsWith('d')) {
+      const days = parseInt(refreshExpiresIn.replace('d', ''), 10);
+      expiresAt.setDate(expiresAt.getDate() + days);
+    } else if (refreshExpiresIn.endsWith('h')) {
+      const hours = parseInt(refreshExpiresIn.replace('h', ''), 10);
+      expiresAt.setHours(expiresAt.getHours() + hours);
+    } else {
+      // Default to 7 days if format is unrecognized
+      expiresAt.setDate(expiresAt.getDate() + 7);
+    }
 
     await prisma.refreshToken.create({
       data: {

@@ -1,19 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { CheckCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { extractErrorMessage } from "@/utils/errorHandler";
 
-export default function LoginPage() {
+function LoginContent() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [useOTP, setUseOTP] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, requestOTP, loginWithOTP } = useAuth();
+
+  useEffect(() => {
+    // Check if user just registered
+    if (searchParams.get("registered") === "true") {
+      setShowSuccess(true);
+      // Remove the query parameter from URL
+      router.replace("/login", { scroll: false });
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +59,13 @@ export default function LoginPage() {
       }
       router.push("/listings");
     } catch (err: any) {
-      setError(extractErrorMessage(err) || "Login failed. Please try again.");
+      const errorMessage = extractErrorMessage(err);
+      // Check if it's a network error (backend not running)
+      if (errorMessage.includes('backend server') || errorMessage.includes('Unable to connect')) {
+        setError(errorMessage);
+      } else {
+        setError(errorMessage || "Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,9 +85,45 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {showSuccess && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm font-semibold text-green-800">Registration Successful!</p>
+                <p className="text-xs text-green-700 mt-1">
+                  Your account has been created successfully. Please login to access the system.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800">Error</p>
+                <p className="mt-1 text-sm text-red-600">{error}</p>
+                {error.includes('backend server') && (
+                  <div className="mt-3 rounded-lg bg-red-100 p-3">
+                    <p className="text-xs font-medium text-red-800 mb-2">To fix this:</p>
+                    <ol className="text-xs text-red-700 space-y-1 list-decimal list-inside">
+                      <li>Open a terminal/command prompt</li>
+                      <li>Navigate to the <code className="bg-red-200 px-1 rounded">server</code> folder</li>
+                      <li>Run <code className="bg-red-200 px-1 rounded">npm run dev</code></li>
+                      <li>Wait for the server to start (you should see "Server running on port 5000")</li>
+                      <li>Then try again</li>
+                    </ol>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -161,5 +220,21 @@ export default function LoginPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <section className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full text-gray-900 max-w-md rounded-xl bg-white p-8 shadow-sm border">
+          <div className="text-center">
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </section>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

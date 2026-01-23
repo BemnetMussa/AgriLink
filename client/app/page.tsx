@@ -1,11 +1,13 @@
 "use client";
 
+
 import { Globe, WifiOff, Lock, Users, Bell, MapPin, Smartphone, Wallet, RefreshCw } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HomePage() {
   const isAuthenticated = true; 
-  // const user = { firstName: "Abebe", lastName: "Kebede" };
+  const user = { firstName: "Abebe", lastName: "Kebede", role: "FARMER" };
 
   return (
     <>
@@ -34,9 +36,14 @@ export default function HomePage() {
                 </button>
 
                 {isAuthenticated ? (
-                  <button className="rounded-lg border-2 border-gray-200 px-8 py-3.5 text-base font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                    Sell Your Produce
-                  </button>
+                  user?.role === 'FARMER' ? (
+                    <Link
+                      href="/listings/create"
+                      className="rounded-md border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 hover:bg-gray-100 transition"
+                    >
+                      Sell Your Produce
+                    </Link>
+                  ) : null
                 ) : (
                   <button className="rounded-lg border-2 border-gray-200 px-8 py-3.5 text-base font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
                     Get Started

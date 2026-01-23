@@ -10,13 +10,22 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): Response => {
-  // Log error
-  logger.error('Error:', {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-  });
+  // Don't log authentication errors for public endpoints (expected behavior)
+  const isAuthError = err instanceof AppError && err.statusCode === 401;
+  const isPublicEndpoint = req.path.includes('/health') || 
+                          req.path.includes('/auth/otp/request') ||
+                          req.path.includes('/auth/register') ||
+                          req.path.includes('/auth/login');
+  
+  // Only log non-auth errors or auth errors on protected endpoints
+  if (!isAuthError || !isPublicEndpoint) {
+    logger.error('Error:', {
+      error: err.message,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+    });
+  }
 
   // Handle known AppError
   if (err instanceof AppError) {
@@ -41,11 +50,15 @@ export const errorHandler = (
 
   // Handle JWT errors
   if (err.name === 'JsonWebTokenError') {
-    return sendError(res, 'Invalid token.', 401, err);
+    return sendError(res, 'Invalid token. Please login again.', 401, err);
   }
 
   if (err.name === 'TokenExpiredError') {
-    return sendError(res, 'Token expired.', 401, err);
+    return sendError(res, 'Token expired. Please login again.', 401, err);
+  }
+
+  if (err.name === 'NotBeforeError') {
+    return sendError(res, 'Token not yet valid.', 401, err);
   }
 
   // Default error

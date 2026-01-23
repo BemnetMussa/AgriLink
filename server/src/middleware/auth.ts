@@ -58,9 +58,28 @@ export const authenticate = async (
     };
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof AuthenticationError) {
       throw error;
+    }
+    
+    // Provide more specific error messages for JWT errors
+    if (error.name === 'JsonWebTokenError') {
+      throw new AuthenticationError('Invalid token format');
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      throw new AuthenticationError('Token has expired. Please login again');
+    }
+    
+    if (error.name === 'NotBeforeError') {
+      throw new AuthenticationError('Token not yet valid');
+    }
+    
+    // Only log unexpected errors in development
+    // Don't log expected authentication failures (missing/invalid tokens)
+    if (process.env.NODE_ENV === 'development' && error.name !== 'JsonWebTokenError') {
+      console.error('Authentication error:', error);
     }
     throw new AuthenticationError('Invalid or expired token');
   }
