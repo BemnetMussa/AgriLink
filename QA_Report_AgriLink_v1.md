@@ -2,7 +2,7 @@
 
 - Prepared for: AgriLink Ethiopia
 - Prepared by: Abenezer Abebe
-- Date: [Insert date]
+- Date: 1/24/2026
 - Scope: End-to-end QA against SDS, including functional flows, usability, accessibility, performance (3G), PWA/offline behaviors, i18n, payments/escrow, API contracts, security, and observability.
 - Basis: Codebase and SDS you provided (no live environment). Static analysis + executable test plans. Empirical metrics to be added once environment access is shared.
 
