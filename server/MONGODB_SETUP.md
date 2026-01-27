@@ -25,6 +25,8 @@ DATABASE_URL="mongodb://localhost:27017/agrilink"
 DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/agrilink?retryWrites=true&w=majority"
 ```
 
+
+
 Replace:
 - `username` - Your MongoDB username
 - `password` - Your MongoDB password
