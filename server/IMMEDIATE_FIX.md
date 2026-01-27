@@ -23,7 +23,7 @@ npm run prisma:migrate
 
 ### Step 3: Start Server
 ```bash
-npm run dev
+npm run dev  
 ```
 
 **Done!** The server should now start. ✅
