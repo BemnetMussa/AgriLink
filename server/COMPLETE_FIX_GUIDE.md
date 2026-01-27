@@ -26,6 +26,8 @@ Error: An error occurred during DNS resolution: A socket operation was attempted
      - **"Add IP Address"** (manual entry)
    - Click **"Confirm"**
 
+   
+
 4. **OR Allow All IPs (Quick Test)**
    - Click **"Add IP Address"**
    - Enter: `0.0.0.0/0`
