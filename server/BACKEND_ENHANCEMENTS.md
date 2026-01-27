@@ -25,6 +25,7 @@
 - **Case-insensitive search**: All search operations use case-insensitive matching
 - **Better query building**: More efficient where clause construction
 
+
 ### 5. Security Enhancements
 - **Input validation**: Comprehensive Zod schemas for all endpoints
 - **Password requirements**: Strong password validation (8+ chars, uppercase, lowercase, number)
