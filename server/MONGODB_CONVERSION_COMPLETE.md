@@ -23,6 +23,8 @@ Edit `server/.env` and replace the DATABASE_URL:
 DATABASE_URL="mongodb://localhost:27017/agrilink"
 ```
 
+
+
 **For MongoDB Atlas (Cloud):**
 ```env
 DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/agrilink?retryWrites=true&w=majority"
