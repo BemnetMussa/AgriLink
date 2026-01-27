@@ -23,7 +23,7 @@ Error: An error occurred during DNS resolution: A socket operation was attempted
 
 ```bash
 # 1. Generate Prisma Client (if needed)
-npm run prisma:generate
+npm run prisma:generate   
 
 # 2. Push schema to MongoDB
 npx prisma db push
